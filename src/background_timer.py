@@ -6,37 +6,17 @@ import inspect
 msg = messageR.MessageR('Global')
 
 
-MODE_START_Y = 0.2
-MODE_Y_INCREASER = 0.075
-PLACEMENT_WIDGETS = {}
+MODE_START_Y = 0.25
+MODE_Y_INCREASER = 0.1
+PLACEMENT_WIDGETS = []
 
 
-def place_mode_widget(widget: customtkinter, placement: int) -> None:
-    shove_widgets_back = False
+def place_mode_widget(widget: customtkinter) -> None:
+    curr_widget_number = len(PLACEMENT_WIDGETS)
+    PLACEMENT_WIDGETS.append(curr_widget_number)
 
-    if placement > len(PLACEMENT_WIDGETS):
-        placement = len(PLACEMENT_WIDGETS) + 1 if len(PLACEMENT_WIDGETS) > 0 else 0
-    if placement < 0:
-        placement = 0
-
-    for p in PLACEMENT_WIDGETS.keys():
-        if p < placement:
-            continue
-        elif p == placement and not shove_widgets_back:
-            shove_widgets_back = True
-            placement += 1
-            continue
-
-        if shove_widgets_back:
-            PLACEMENT_WIDGETS[p] =
-
-
-
-
-
-
-    y_cord = MODE_START_Y + MODE_Y_INCREASER * placement
-    widget.place(relx=0.5, rely=)
+    y_cord = MODE_START_Y + MODE_Y_INCREASER * curr_widget_number
+    widget.place(relx=0.5, rely=y_cord, anchor='center')
 
 
 timer_app = customtkinter.CTk()
@@ -58,7 +38,13 @@ border_mode_site.place(relx=0.96, relwidth=0.04, relheight=1)
 
 # ------------- TIMER --------------
 timer_button_mode = customtkinter.CTkButton(mode_site, text='Timer')
-timer_button_mode.place(relx=0.5, rely=0.2, anchor='center')
+stop_watch_button_mode = customtkinter.CTkButton(mode_site, text='Stop Watch')
+
+
+
+
+place_mode_widget(timer_button_mode)
+place_mode_widget(stop_watch_button_mode)
 
 
 # ==================================
@@ -70,5 +56,4 @@ timer_button_mode.place(relx=0.5, rely=0.2, anchor='center')
 timer_label_content = customtkinter.CTkLabel(content_site, text='Timer')
 timer_label_content.place(relx=0.5, rely=0.2, anchor='center')
 
-place_mode_widget(timer_label_content, 1)
 timer_app.mainloop()
