@@ -7,6 +7,7 @@ class NumberPicker(ctk.CTkFrame):
         self.min_value = min_value
         self.max_value = max_value
         self.value = min_value
+        self.blocked = False
 
         self.up_button = ctk.CTkButton(
             self,
@@ -36,6 +37,8 @@ class NumberPicker(ctk.CTkFrame):
 
         self.bind("<MouseWheel>", self.mousewheel)
         self.label.bind("<MouseWheel>", self.mousewheel)
+        self.label.bind("<Double-Button-1>", self.double_click)
+        self.label.bind("<Triple-Button-1>", self.triple_click)
 
     def increase(self):
         if self.value < self.max_value:
@@ -57,10 +60,27 @@ class NumberPicker(ctk.CTkFrame):
         self.label.configure(text=f"{self.value:02}")
 
     def mousewheel(self, event):
-        if event.delta > 0:
-            self.increase()
-        else:
-            self.decrease()
+        if not self.blocked:
+            if event.delta > 0:
+                self.increase()
+            else:
+                self.decrease()
+
+    def double_click(self, event):
+        if not self.blocked:
+            self.value = self.min_value
+            self.update_label()
+
+    def triple_click(self, event):
+        if not self.blocked:
+            self.value = self.max_value
+            self.update_label()
+
+    def block_mouse(self):
+        self.blocked = True
+
+    def unblock_mouse(self):
+        self.blocked = False
 
     def get(self):
         return self.value
