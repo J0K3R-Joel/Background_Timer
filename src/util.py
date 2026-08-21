@@ -109,10 +109,10 @@ class Utility():
             return include_value if content == include_value else invalid_content
 
 
-    def get_widgets_from_scope(self, result, scope = None):
-        scope = self.master if scope == None else scope
+    def get_widgets_from_scope(self, result, scope_children = None):
+        scope_children = self.master if scope_children == None else scope_children
 
-        for child in scope:
+        for child in scope_children:
             result.append(child)
             subchildren = child.winfo_children()
             if subchildren:
@@ -169,4 +169,14 @@ class Utility():
 
         button = self.get_specific_button_from_scope(scope, button_text)
         button.configure(**kwargs)
+
+    def clear_scope(self, scope = None):
+        scope = self.master if scope == None else scope
+
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
+        for widget in widgets:
+            try:
+                widget.destroy()
+            except Exception as e:
+                continue
 
