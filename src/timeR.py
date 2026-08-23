@@ -8,12 +8,11 @@ from messageR import MessageR
 from util import Utility
 from fileR import FileR
 from pathR import PathR
+from timing import Timing
 
-class TimeR():
+class TimeR(Timing):
     def __init__(self, master, TOP_LABEL_POS: dict, top_label_content: ctk.CTkLabel):
-        self.master = master
-        self.TOP_LABEL_POS = TOP_LABEL_POS
-        self.top_label_content = top_label_content
+        Timing.__init__(self, master, TOP_LABEL_POS, top_label_content)
 
         self.ENDLESS_LOOP = False
         self.SOUND_LOOPS = 3
@@ -38,8 +37,8 @@ class TimeR():
     def __change_on_timer(self):
         self.utility.disable_all_buttons_from_scope(self.master)
 
-        fg_color = f'#{self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)}'
-        text_color = f'#{self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)}'
+        fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
+        text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
         self.utility.change_button_kwargs('Start', command=self.__stop_timer, state=ctk.NORMAL, text='Stop', fg_color=fg_color, text_color=text_color)
 
         timer_entry = self.utility.get_entry_by_name('timer')
@@ -138,13 +137,6 @@ class TimeR():
     def __hide_timer(self):
         pass
 
-    def __hide_all_frames(self):
-        widgets = self.utility.get_widgets_from_scope([], self.master.winfo_children())
-        for widget in widgets:
-            if isinstance(widget, ctk.CTkFrame):
-                if not isinstance(widget.cget('fg_color'), str) or widget.cget('fg_color')[0] != '#':
-                    widget.configure(fg_color='transparent')
-
     def __set_volume(self, value):
         self.SOUND_VOLUME = value
         self.volume_value_label.configure(text=f'{int(self.SOUND_VOLUME)}%')
@@ -159,7 +151,7 @@ class TimeR():
 
 
     def start(self):
-        timer_entry_content = EntryExpanding(self.master, space_count=16, start_text='Timer',  placeholder_text='Timer', font=('Arial', 25))
+        timer_entry_content = EntryExpanding(self.master, space_count=16, start_text='Timer     ',  placeholder_text='Timer', font=('Arial', 25))
         timer_entry_content.place(**self.TOP_LABEL_POS)
 
         timer_frame = ctk.CTkFrame(self.master)
@@ -222,4 +214,7 @@ class TimeR():
         self.utility.create_entry_name(timer_entry_content, 'timer')
         self.utility.create_entry_name(loop_entry, 'loop')
 
-        self.__hide_all_frames()
+        self.utility.hide_all_frames()
+        self.utility.set_default_button_text_color()
+        self.utility.set_default_fg_color()
+        self.utility.set_default_button_text_color()

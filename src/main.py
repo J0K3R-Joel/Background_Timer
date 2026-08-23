@@ -39,10 +39,14 @@ MODE_START_Y = 0.25
 MODE_Y_INCREASER = 0.1
 PLACEMENT_WIDGETS = []
 
-def clear_page():
+def clear_page() -> ctk.CTkLabel:
+    global top_label_content
     utility.clear_scope(content_site)
     border_heading_content = ctk.CTkFrame(content_site, corner_radius=0, fg_color=utility.STANDARD_FG_COLOR)
     border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
+    top_label_content = ctk.CTkLabel(content_site, font=('Arial', 25))
+
+    return top_label_content
 
 def place_mode_widget(widget: ctk) -> None:
     curr_widget_number = len(PLACEMENT_WIDGETS)
@@ -52,14 +56,19 @@ def place_mode_widget(widget: ctk) -> None:
     widget.place(relx=0.5, rely=y_cord, anchor='center')
 
 def focus_timer():
-    clear_page()
+    label = clear_page()
+    timer_site.set_top_label_content(label)
     timer_site.start()
 
 def focus_alarm():
-    clear_page()
+    label = clear_page()
+    alarm_site.set_top_label_content(label)
+    alarm_site.start()
 
 def focus_stop_watch():
-    clear_page()
+    label = clear_page()
+    stop_watch_site.set_top_label_content(label)
+    stop_watch_site.start()
 
 
 

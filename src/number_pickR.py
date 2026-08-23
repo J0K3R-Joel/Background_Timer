@@ -1,7 +1,7 @@
 import customtkinter as ctk
 
 class NumberPicker(ctk.CTkFrame):
-    def __init__(self, master, min_value, max_value, **kwargs):
+    def __init__(self, master, min_value: int, max_value: int, with_buttons: bool = True, **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
 
         self.min_value = min_value
@@ -9,14 +9,15 @@ class NumberPicker(ctk.CTkFrame):
         self.value = min_value
         self.blocked = False
 
-        self.up_button = ctk.CTkButton(
-            self,
-            text="▲",
-            width=60,
-            height=30,
-            command=self.increase
-        )
-        self.up_button.pack()
+        if with_buttons:
+            self.up_button = ctk.CTkButton(
+                self,
+                text="▲",
+                width=60,
+                height=30,
+                command=self.increase
+            )
+            self.up_button.pack()
 
         self.label = ctk.CTkLabel(
             self,
@@ -26,14 +27,15 @@ class NumberPicker(ctk.CTkFrame):
         )
         self.label.pack(pady=5)
 
-        self.down_button = ctk.CTkButton(
-            self,
-            text="▼",
-            width=60,
-            height=30,
-            command=self.decrease
-        )
-        self.down_button.pack()
+        if with_buttons:
+            self.down_button = ctk.CTkButton(
+                self,
+                text="▼",
+                width=60,
+                height=30,
+                command=self.decrease
+            )
+            self.down_button.pack()
 
         self.bind("<MouseWheel>", self.mousewheel)
         self.label.bind("<MouseWheel>", self.mousewheel)

@@ -34,12 +34,19 @@ class Utility():
         threading.Thread(target=show_text, args=(scope, text, seconds,), daemon=True).start()
 
 
+    def hide_all_frames(self, scope = None):
+        scope = self.master if scope == None else scope
 
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
+        for widget in widgets:
+            if isinstance(widget, ctk.CTkFrame):
+                if not isinstance(widget.cget('fg_color'), str) or widget.cget('fg_color')[0] != '#':
+                    widget.configure(fg_color='transparent')
 
     def set_default_fg_color(self, scope = None):
         scope = self.master if scope == None else scope
 
-        widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
         widget_types_to_change = [
             ctk.CTkButton,
             ctk.CTkCheckBox
@@ -54,7 +61,7 @@ class Utility():
 
     def set_default_text_color(self, exclude_buttons: bool = False, scope = None):
         scope = self.master if scope == None else scope
-        widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
 
         if exclude_buttons:
             for widget in widgets:
@@ -73,7 +80,7 @@ class Utility():
     def set_default_button_text_color(self, scope = None):
         scope = self.master if scope == None else scope
 
-        widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
 
         for widget in widgets:
             if isinstance(widget, ctk.CTkButton):
@@ -87,7 +94,7 @@ class Utility():
             hex_code = hex_code[1:]
         rgb = (hex_code[0:2], hex_code[2:4], hex_code[4:6])
         comp = ['%02X' % (255 - int(a, 16)) for a in rgb]
-        return ''.join(comp)
+        return '#' + ''.join(comp)
 
     def create_entry_name(self, entry_widget: ctk.CTkEntry, name: str) -> None:
         self.ENTRY_WIDGETS[name] = entry_widget
@@ -124,7 +131,7 @@ class Utility():
     def disable_all_buttons_from_scope(self, scope = None):
         scope = self.master if scope == None else scope
 
-        all_widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        all_widgets = self.get_widgets_from_scope([], scope.winfo_children())
         widgets_to_disable = [
             ctk.CTkButton,
             ctk.CTkSlider,
@@ -141,7 +148,7 @@ class Utility():
     def enable_all_buttons_from_scope(self, scope = None):
         scope = self.master if scope == None else scope
 
-        all_widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        all_widgets = self.get_widgets_from_scope([], scope.winfo_children())
         widgets_to_disable = [
             ctk.CTkButton,
             ctk.CTkSlider,
@@ -158,7 +165,7 @@ class Utility():
     def get_specific_button_from_scope(self, button_text: str, scope = None):
         scope = self.master if scope == None else scope
 
-        all_widgets = self.get_widgets_from_scope(scope.winfo_children(), [])
+        all_widgets = self.get_widgets_from_scope([], scope.winfo_children())
         for widget in all_widgets:
             if isinstance(widget, ctk.CTkButton):
                 if widget.cget('text').upper() == button_text.upper():

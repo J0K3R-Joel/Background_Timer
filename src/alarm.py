@@ -1,10 +1,9 @@
 import customtkinter as ctk
+from timing import Timing
 
-class Alarm():
+class Alarm(Timing):
     def __init__(self, master, TOP_LABEL_POS, top_label_content):
-        self.master = master
-        self.TOP_LABEL_POS = TOP_LABEL_POS
-        self.top_label_content = top_label_content
+        Timing.__init__(self, master, TOP_LABEL_POS, top_label_content)
 
     def start(self):
         pass
