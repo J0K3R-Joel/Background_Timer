@@ -11,6 +11,7 @@ class Utility():
         self.STANDARD_FG_COLOR = '#1f6aa5'
         self.STANDARD_TEXT_COLOR = '#FFFFFF'
         self.STANDARD_BUTTON_TEXT_COLOR = '#FFFFFF'
+        self.STANDARD_BACKGROUND_COLOR = '#2b2b2b'
         #@TODO fix hovering above buttons
         self.ENTRY_WIDGETS = {}
         self.msg = MessageR('Utility')
@@ -58,6 +59,8 @@ class Utility():
                     widget.configure(fg_color=self.STANDARD_FG_COLOR)
                 elif isinstance(widget, ctk.CTkSlider):
                     widget.configure(button_color=self.STANDARD_FG_COLOR, progress_color=self.STANDARD_FG_COLOR)
+                elif isinstance(widget, ctk.CTkScrollbar):
+                    widget.configure(button_color=self.STANDARD_FG_COLOR)
 
     def set_default_text_color(self, exclude_buttons: bool = False, scope = None):
         scope = self.master if scope == None else scope
@@ -174,7 +177,7 @@ class Utility():
     def change_button_kwargs(self, button_text: str, scope=None, **kwargs):
         scope = self.master if scope == None else scope
 
-        button = self.get_specific_button_from_scope(scope, button_text)
+        button = self.get_specific_button_from_scope(button_text, scope)
         button.configure(**kwargs)
 
     def clear_scope(self, scope = None):

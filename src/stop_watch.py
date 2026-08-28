@@ -12,28 +12,29 @@ class Stop_Watch(Timing):
         self.utility = Utility(self.master)
         self.paused = False
         self.stopped = False
+        self.elapsed_before_pause = 0
 
-    
+
     def __watch_mode_active(self, start_button, pause_button, rounding_button):
         text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
         fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
 
         self.stopped = False
         self.paused = False
+        self.roundings = 0
 
         lap_label = ctk.CTkLabel(self.master, text='Laps:', font=('Arial', 16))
-        lap_frame = ctk.CTkFrame(self.master, fg_color='transparent')
         center_line = ctk.CTkFrame(self.master, corner_radius=0, fg_color='#555555')
 
-        start_button.configure(text='Stop', fg_color=fg_color, text_color=text_color, command=lambda: self.__stop_watch(start_button, pause_button, rounding_button, lap_label, lap_frame, center_line))
+        start_button.configure(text='Stop', fg_color=fg_color, text_color=text_color, command=lambda: self.__stop_watch(start_button, pause_button, rounding_button, lap_label, center_line))
         pause_button.configure(text='⏸', fg_color=fg_color, text_color=text_color, command=lambda: self.__stopper(pause_button))
-        rounding_button.configure(text='Round', fg_color=fg_color, text_color=text_color, command=lambda: self.__round_now(lap_frame))
+        rounding_button.configure(text='Round', fg_color=fg_color, text_color=text_color, command=self.__round_now)
 
         pause_button.place(relx=0.38, rely=0.46, relwidth=0.1, anchor='center')
         rounding_button.place(relx=0.62, rely=0.46, relwidth=0.1, anchor='center')
         center_line.place(relx=0, rely=0.53, relwidth=1, relheight=0.01)
         lap_label.place(relx=0.02, rely=0.55)
-        lap_frame.place(relx=0.02, rely=0.62, relwidth=0.96, relheight=0.34)
+        self.lap_frame.place(relx=0.02, rely=0.62, relwidth=0.96, relheight=0.34)
 
 
     def __watch_mode_inactive(self, start_button, pause_button, rounding_button, *removable_widgets):
@@ -41,101 +42,116 @@ class Stop_Watch(Timing):
 
         self.stopped = True
         self.paused = False
+        self.utility.clear_scope(self.lap_placeable_frame)
+        self.lap_frame.place_forget()
+        self.lap_scroll_bar.place_forget()
         pause_button.place_forget()
         rounding_button.place_forget()
         for widget in removable_widgets:
             widget.destroy()
 
+    def __pause_stopwatch(self):
+        if not self.paused:
+            self.elapsed_before_pause += time.perf_counter() - self.start_time
+            self.paused = True
+
+    def __resume_stopwatch(self):
+        self.start_time = time.perf_counter()
+        self.paused = False
+        self.__update_stopwatch()
 
 
-    def __round_now(self, lap_frame):
-        pass
+    def __round_now(self):
+        if not self.lap_scroll_bar.winfo_ismapped():
+            self.lap_scroll_bar.place(relx=0.97, rely=0, relwidth=0.03, relheight=1)
+        hours = self.hours_time_label.cget('text')
+        minutes = self.minutes_time_label.cget('text')
+        seconds = self.seconds_time_label.cget('text')
+        milliseconds = self.milliseconds_time_label.cget('text')
+
+        self.roundings += 1
+        time_string = ''
+
+        if hours != '000':
+            time_string += hours.lstrip('0') + 'hr :'
+        if minutes != '00':
+            time_string += minutes.lstrip('0') + 'min : '
+        if seconds != '00':
+            time_string += seconds.lstrip('0') + 'sec : '
+        time_string += milliseconds + 'ms'
+
+        lap_row = ctk.CTkFrame(self.lap_placeable_frame)
+        lap_row.pack(fill='x', pady=5)
+
+        l1 = ctk.CTkLabel(lap_row, text=f'{self.roundings}.')
+        l2 = ctk.CTkLabel(lap_row, text=time_string)
+        l1.pack(side='left', padx=5)
+        l2.pack(side='top')
+
+        l1.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
+        l2.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
+
+
 
     def __stopper(self, pause_button):
         pause_button.configure(text='▶', command=lambda: self.__continuer(pause_button))
-        self.paused = True
+        self.__pause_stopwatch()
 
     def __continuer(self, pause_button):
         pause_button.configure(text='⏸', command=lambda: self.__stopper(pause_button))
-        self.paused = False
+        self.__resume_stopwatch()
 
 
     def __start_watch(self, start_button: ctk.CTkButton, pause_button: ctk.CTkButton, rounding_button: ctk.CTkButton):
         self.__watch_mode_active(start_button, pause_button, rounding_button)
+        self.start_time = time.perf_counter()
+        self.elapsed_before_pause = 0
+        self.__update_stopwatch()
 
-        def begin_now():
-            sleeping = 0
-            difference = 0
-            waiting = 0
-            last_start_time = 0
-            start_time = 0
-            while not self.stopped:
-                if start_time:
-                    last_start_time = time.time()
-                while not self.paused and not self.stopped:
-                    difference = (start_time - last_start_time)
-                    start_time = time.time()
+    def __update_stopwatch(self):
+        if self.stopped or self.paused:
+            return
 
-                    waiting = 0.01 - (start_time - last_start_time)
-                    adjuster = sleeping if sleeping < 0 else 0
-                    sleeping = waiting - difference - adjuster
+        elapsed = (
+                self.elapsed_before_pause
+                + time.perf_counter() - self.start_time
+        )
 
-                    print(sleeping, waiting, difference)
-                    time.sleep(sleeping if sleeping > 0 else 0)
-                    last_start_time = time.time()
+        hours = int(elapsed // 3600)
+        minutes = int(elapsed // 60) % 60
+        seconds = int(elapsed) % 60
+        centiseconds = int(elapsed * 100) % 100
 
-                    millis = int(self.milliseconds_time_label.cget('text'))
-                    seconds = int(self.seconds_time_label.cget('text'))
-                    minutes = 0
-                    millis += 1
+        self.hours_time_label.configure(text=f"{hours:03d}")
+        self.minutes_time_label.configure(text=f"{minutes:02d}")
+        self.seconds_time_label.configure(text=f"{seconds:02d}")
+        self.milliseconds_time_label.configure(text=f"{centiseconds:02d}")
 
-                    if millis == 100:
-                        seconds += 1
-                        self.seconds_time_label.configure(text=seconds)
-                        millis = 0
+        self.master.after(10, self.__update_stopwatch)
 
-                    if seconds == 60:
-                        minutes = int(self.minutes_time_label.cget('text'))
-                        minutes += 1
-                        self.minutes_time_label.configure(text=minutes)
-                        seconds = 0
-                        self.seconds_time_label.configure(text=seconds)
-
-                    if minutes and minutes == 60:
-                        hours = int(self.hours_time_label.cget('text'))
-                        hours += 1
-                        self.hours_time_label.configure(text=hours)
-                        minutes = 0
-                        self.minutes_time_label.configure(text=minutes)
-
-                    self.milliseconds_time_label.configure(text=millis)
-
-
-
-        threading.Thread(target=begin_now, daemon=True).start()
 
 
 
     def __stop_watch(self, start_button: ctk.CTkButton, pause_button: ctk.CTkButton, rounding_button: ctk.CTkButton, *removable_widgets):
         self.__watch_mode_inactive(start_button, pause_button, rounding_button, *removable_widgets)
 
-        self.hours_time_label.configure(text='0')
-        self.minutes_time_label.configure(text='0')
-        self.seconds_time_label.configure(text='0')
-        self.milliseconds_time_label.configure(text='0')
+        self.hours_time_label.configure(text='000')
+        self.minutes_time_label.configure(text='00')
+        self.seconds_time_label.configure(text='00')
+        self.milliseconds_time_label.configure(text='00')
 
     def start(self):
         self.top_label_content.configure(text='Stop Watch')
         self.top_label_content.place(**self.TOP_LABEL_POS)
 
         clock_frame = ctk.CTkFrame(self.master)
-        self.hours_time_label = ctk.CTkLabel(clock_frame, text='0', font=('Arial', 26))
+        self.hours_time_label = ctk.CTkLabel(clock_frame, text='000', font=('Arial', 26))
         hour_min_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
-        self.minutes_time_label = ctk.CTkLabel(clock_frame, text='0', font=('Arial', 26))
+        self.minutes_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
         min_sec_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
-        self.seconds_time_label = ctk.CTkLabel(clock_frame, text='0', font=('Arial', 26))
+        self.seconds_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
         sec_millisec_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
-        self.milliseconds_time_label = ctk.CTkLabel(clock_frame, text='0', font=('Arial', 26))
+        self.milliseconds_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
 
         self.hours_time_label.place(relx=0.15, rely=0.5, anchor='center')
         hour_min_sep.place(relx=0.285, rely=0.5, anchor='center')
@@ -162,6 +178,18 @@ class Stop_Watch(Timing):
 
         start_button = ctk.CTkButton(self.master, text='Start', command= lambda: self.__start_watch(start_button, pause_button, rounding_button))
         start_button.place(relx=0.5, rely=0.46, relwidth=0.1, anchor='center')
+
+        self.lap_frame = ctk.CTkFrame(self.master, fg_color='transparent')
+        self.lap_canvas = ctk.CTkCanvas(self.lap_frame, background=self.utility.STANDARD_BACKGROUND_COLOR, highlightthickness=2, borderwidth=0)
+        self.lap_scroll_bar = ctk.CTkScrollbar(self.lap_frame, orientation='vertical', command=self.lap_canvas.yview)
+        self.lap_placeable_frame = ctk.CTkFrame(self.lap_canvas)
+        self.lap_canvas.configure(yscrollcommand=self.lap_scroll_bar.set)
+        window = self.lap_canvas.create_window((0, 0), window=self.lap_placeable_frame, anchor='nw')
+        self.lap_placeable_frame.bind("<Configure>", lambda e: self.lap_canvas.configure(scrollregion=self.lap_canvas.bbox("all")))
+        self.lap_canvas.bind('<Configure>', lambda event: self.lap_canvas.itemconfigure(window, width=event.width))
+        self.lap_placeable_frame.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
+        self.lap_canvas.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+
 
         self.utility.hide_all_frames()
         self.utility.set_default_button_text_color()

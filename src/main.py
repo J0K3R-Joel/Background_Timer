@@ -71,8 +71,6 @@ def focus_stop_watch():
     stop_watch_site.start()
 
 
-
-
 mode_site.place(relx=0, rely=0, relwidth=0.2, relheight=1)
 content_site.place(relx=0.2, rely=0, relwidth=0.8, relheight=1)
 
@@ -85,7 +83,7 @@ border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
 
 # ==================================
 # ============= MODE ===============
-# ==================================
+# ================================== 
 
 # ------------- TIMER --------------
 timer_button_mode = ctk.CTkButton(mode_site, text='Timer', command=focus_timer)

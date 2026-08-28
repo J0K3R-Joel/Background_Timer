@@ -2,7 +2,9 @@ import customtkinter as ctk
 import pygame
 import threading
 import time
+from datetime import datetime, timedelta
 from ExpandingEntry import EntryExpanding
+from circular_progress_bar import CircularProgressBar
 from number_pickR import NumberPicker
 from messageR import MessageR
 from util import Utility
@@ -48,6 +50,39 @@ class TimeR(Timing):
         timer_entry.place_forget()
         self.top_label_content.place(**self.TOP_LABEL_POS)
 
+        hours = self.NUMBERPICKERS['hour']
+        minutes = self.NUMBERPICKERS['minute']
+        seconds = self.NUMBERPICKERS['second']
+        duration = ''
+        if hours.get() != 0:
+            duration += f'{hours.get()}hr, '
+        if minutes.get() != 0:
+            duration += f'{minutes.get()}min, '
+        if seconds.get() != 0:
+            duration += f'{seconds.get()}sec, '
+
+        duration = duration[0:len(duration)-2]  # -2 to cut the ", " off
+        self.duration_label.configure(text=duration)
+
+        time_now = datetime.now()
+        future_time = time_now + timedelta(hours=hours.get(), minutes=minutes.get(), seconds=seconds.get())
+        time_format = '%H:%M:%S' if seconds.get() else '%H:%M'
+        self.current_time_label.configure(text=f'from: {time_now.strftime(time_format)}')
+        self.future_time_label.configure(text=f'until: {future_time.strftime(time_format)}')
+
+        self.__handle_progress_bar_shown(hours, minutes, seconds)
+
+    def __handle_progress_bar_shown(self, hours, minutes, seconds):
+        real_seconds = hours.get() * 60 * 60 + minutes.get() * 60 + seconds.get()
+        self.progress_bar.set_max_value(real_seconds)
+        self.progress_bar.place(relx=0.15, rely=0.395, anchor='center')
+
+
+    def __handle_progress_bar_hidden(self):
+        self.progress_bar.place_forget()
+
+
+
     def __change_off_timer(self):
         self.utility.enable_all_buttons_from_scope()
         self.utility.change_button_kwargs('Stop', command=self.__start_timer, text='Start', fg_color=self.utility.STANDARD_FG_COLOR, text_color=self.utility.STANDARD_BUTTON_TEXT_COLOR)
@@ -57,14 +92,25 @@ class TimeR(Timing):
         self.top_label_content.place_forget()
         timer_entry.place(**self.TOP_LABEL_POS)
 
+        self.duration_label.configure(text='')
+        self.current_time_label.configure(text='')
+        self.future_time_label.configure(text='')
+
+        self.__handle_progress_bar_hidden()
+
     def __stop_timer(self):
         self.TIMER_RUNNING = False
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
+        hours = self.NUMBERPICKERS['hour']
+        minutes = self.NUMBERPICKERS['minute']
+        seconds = self.NUMBERPICKERS['second']
+        hours.set(0)
+        minutes.set(0)
+        seconds.set(0)
 
     def __start_timer(self) -> None:
         loops = self.utility.handle_entry_name_return('loop', 'int', 'invalid', '∞')
-        print(f'{loops = }')
         volume = self.SOUND_VOLUME / 100
         if loops == 'invalid':
             self.utility.show_warning_text('The loop count has to be a number!', 4)
@@ -82,19 +128,28 @@ class TimeR(Timing):
                 seconds.block_mouse()
                 self.msg.info('Timer has started!')
                 self.TIMER_RUNNING = True
+                already_set = False
+                i = 0
+
                 while self.TIMER_RUNNING:
+                    i += 1
+                    self.progress_bar.set_value(i)
                     if hours.get() != 0 and minutes.get() == 0 and seconds.get() == 0:
                         hours.decrease()
-                        minutes.set(minutes.get_max() - 1)
-                        seconds.set(seconds.get_max() - 1)
-                    if hours.get() != 0 or minutes.get() != 0 or seconds.get() != 0:
-                        seconds.decrease()
-                    if minutes.get() != 0 and seconds.get() == 0:
-                        seconds.set(seconds.get_max() - 1)
+                        minutes.set(minutes.get_max())
+                        seconds.set(seconds.get_max())
+                        already_set = True
+                    if not already_set and (minutes.get() != 0 and seconds.get() == 0):
                         minutes.decrease()
+                        seconds.set(seconds.get_max())
+                        already_set = True
+                    if not already_set and (hours.get() != 0 or minutes.get() != 0 or seconds.get() != 0):
+                            seconds.decrease()
                     if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
                         self.msg.good('Timer ended successfully!')
                         break
+                    if already_set:
+                        already_set = False
                     time.sleep(1)
 
                 if self.TIMER_RUNNING:
@@ -208,8 +263,25 @@ class TimeR(Timing):
         endless_loop_checkbox = ctk.CTkCheckBox(self.master, text='Endless Loop', command=self.__endless_loop, variable=self.endless_var, onvalue='endless', offvalue='')
         endless_loop_checkbox.place(relx=0.05, rely=0.825)
 
-        save_timer_button = ctk.CTkButton(self.master, text='Save ✔', command=self.__save_timer, font=('Arial', 18))
-        save_timer_button.place(relx=0.745, rely=0.875)
+        #save_timer_button = ctk.CTkButton(self.master, text='Save ✔', command=self.__save_timer, font=('Arial', 18))
+        #save_timer_button.place(relx=0.745, rely=0.875)
+
+        self.duration_label = ctk.CTkLabel(self.master, text='')
+        self.duration_label.place(relx=0.15, rely=0.2, anchor='center')
+
+        self.current_time_label = ctk.CTkLabel(self.master, text='')
+        self.current_time_label.place(relx=0.15, rely=0.59, anchor='center')
+
+        self.future_time_label = ctk.CTkLabel(self.master, text='')
+        self.future_time_label.place(relx=0.15, rely=0.65, anchor='center')
+
+        self.progress_bar = CircularProgressBar(self.master,
+                                                progress_color=self.utility.STANDARD_FG_COLOR,
+                                                background_color=self.utility.STANDARD_BACKGROUND_COLOR,
+                                                text_color=self.utility.STANDARD_TEXT_COLOR,
+                                                size=175,
+                                                thickness=15,
+                                                )
 
         self.utility.create_entry_name(timer_entry_content, 'timer')
         self.utility.create_entry_name(loop_entry, 'loop')
