@@ -31,9 +31,9 @@ class EntryExpanding(ctk.CTkEntry):
         multiplier = -1 if direction == 'left' else 1
         move_amount = multiplier * count
 
-        if position - move_amount < 0:
-            print('You can not move further to the left!')
-            return False
+        # if position - move_amount < 0:
+        #     print('You can not move further to the left!', position, move_amount)
+        #     return False
 
         self.expansive.icursor(position + move_amount)
         return True
@@ -70,18 +70,20 @@ class EntryExpanding(ctk.CTkEntry):
                 else:
                     break
 
-            spaces_start -= 2  # so that the text isnt cut off at the left side (2 spaces need to stay)
-            spaces_end -= 4  # so that the text isnt cut off at the right side (2 spaces need to stay)
+            spaces_start -= 4  # so that the text isnt cut off at the left side (4 spaces need to stay)
 
 
             if len(text) > spaces_start + spaces_end:
+                if spaces_start < 0:
+                    text = ' ' * (abs(spaces_start)) + text
+                    self.__shift_cursor_in_entry('right', (abs(spaces_start)))
                 if spaces_start > 0:
                     text = text[1:]  # cut the first space off
                 elif spaces_end > 1:
                     text = text[0:len(text)-1]  # cut the last space off
                 else:
                     text = text + ' '
-                    #self.__shift_cusror_in_entry('right', 2)
+                    #self.__shift_cursor_in_entry('right', 2)
                     #self.__cursor_reset_in_entry()
                     self.reset = False
 

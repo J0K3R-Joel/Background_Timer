@@ -7,8 +7,8 @@ from timing import Timing
 from util import Utility
 
 class Stop_Watch(Timing):
-    def __init__(self, master, TOP_LABEL_POS, top_label_content: ctk.CTkLabel):
-        Timing.__init__(self, master, TOP_LABEL_POS, top_label_content)
+    def __init__(self, *args):
+        Timing.__init__(self, *args)
         self.utility = Utility(self.master)
         self.paused = False
         self.stopped = False
@@ -81,7 +81,7 @@ class Stop_Watch(Timing):
         time_string += milliseconds + 'ms'
 
         lap_row = ctk.CTkFrame(self.lap_placeable_frame)
-        lap_row.pack(fill='x', pady=5)
+        lap_row.pack(fill='x', pady=3)
 
         l1 = ctk.CTkLabel(lap_row, text=f'{self.roundings}.')
         l2 = ctk.CTkLabel(lap_row, text=time_string)
@@ -176,19 +176,21 @@ class Stop_Watch(Timing):
 
         rounding_button = ctk.CTkButton(self.master, text='Round')
 
-        start_button = ctk.CTkButton(self.master, text='Start', command= lambda: self.__start_watch(start_button, pause_button, rounding_button))
+        start_button = ctk.CTkButton(self.master, text='Start', command=lambda: self.__start_watch(start_button, pause_button, rounding_button))
         start_button.place(relx=0.5, rely=0.46, relwidth=0.1, anchor='center')
 
         self.lap_frame = ctk.CTkFrame(self.master, fg_color='transparent')
-        self.lap_canvas = ctk.CTkCanvas(self.lap_frame, background=self.utility.STANDARD_BACKGROUND_COLOR, highlightthickness=2, borderwidth=0)
+        self.lap_frame_canvas = ctk.CTkFrame(self.lap_frame, border_width=2, border_color=self.utility.STANDARD_TEXT_COLOR)
+        self.lap_canvas = ctk.CTkCanvas(self.lap_frame_canvas, background=self.utility.STANDARD_BACKGROUND_COLOR, highlightthickness=0, borderwidth=0)
         self.lap_scroll_bar = ctk.CTkScrollbar(self.lap_frame, orientation='vertical', command=self.lap_canvas.yview)
         self.lap_placeable_frame = ctk.CTkFrame(self.lap_canvas)
         self.lap_canvas.configure(yscrollcommand=self.lap_scroll_bar.set)
         window = self.lap_canvas.create_window((0, 0), window=self.lap_placeable_frame, anchor='nw')
         self.lap_placeable_frame.bind("<Configure>", lambda e: self.lap_canvas.configure(scrollregion=self.lap_canvas.bbox("all")))
         self.lap_canvas.bind('<Configure>', lambda event: self.lap_canvas.itemconfigure(window, width=event.width))
-        self.lap_placeable_frame.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
-        self.lap_canvas.place(relx=0, rely=0, relwidth=0.95, relheight=1)
+        self.lap_placeable_frame.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120), "units"))
+        self.lap_frame_canvas.place(relx=0, rely=0, relwidth=0.97, relheight=1)
+        self.lap_canvas.place(relx=0.01, rely=0.05, relwidth=0.98, relheight=0.9)
 
 
         self.utility.hide_all_frames()

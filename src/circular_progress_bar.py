@@ -116,8 +116,17 @@ class CircularProgressBar(tk.Canvas):
             width=self.thickness,
             outline=self.background_color,
         )
+        if percentage <= 0.005:
+            self.create_oval(
+                x1,
+                y1,
+                x2,
+                y2,
+                width=0,
+                outline=self.background_color
+            )
 
-        if percentage >= 1:
+        elif percentage >= 1:
             self.create_oval(
                 x1,
                 y1,
@@ -126,7 +135,7 @@ class CircularProgressBar(tk.Canvas):
                 width=self.thickness,
                 outline=self.progress_color,
             )
-        elif percentage > 0:
+        elif percentage > 0.005:
             self.create_arc(
                 x1,
                 y1,

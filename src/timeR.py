@@ -13,8 +13,8 @@ from pathR import PathR
 from timing import Timing
 
 class TimeR(Timing):
-    def __init__(self, master, TOP_LABEL_POS: dict, top_label_content: ctk.CTkLabel):
-        Timing.__init__(self, master, TOP_LABEL_POS, top_label_content)
+    def __init__(self, *args):
+        Timing.__init__(self, *args)
 
         self.ENDLESS_LOOP = False
         self.SOUND_LOOPS = 3

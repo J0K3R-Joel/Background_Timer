@@ -18,18 +18,6 @@ TOP_LABEL_POS = {'relx': 0.5, 'rely': 0.07, 'anchor': 'center'}
 msg = MessageR('Global')
 utility = Utility(app)
 
-timer_site = TimeR(content_site,
-                   TOP_LABEL_POS=TOP_LABEL_POS,
-                   top_label_content=top_label_content)
-
-stop_watch_site = Stop_Watch(content_site,
-                   TOP_LABEL_POS=TOP_LABEL_POS,
-                   top_label_content=top_label_content)
-
-alarm_site = Alarm(content_site,
-                   TOP_LABEL_POS=TOP_LABEL_POS,
-                   top_label_content=top_label_content)
-
 pygame.mixer.init()
 pygame.init()
 pygame.mixer.music.load('..\\media\\Ringtone.mp3')
@@ -85,7 +73,6 @@ border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
 # ============= MODE ===============
 # ================================== 
 
-# ------------- TIMER --------------
 timer_button_mode = ctk.CTkButton(mode_site, text='Timer', command=focus_timer)
 stop_watch_button_mode = ctk.CTkButton(mode_site, text='Stop Watch', command=focus_stop_watch)
 alarm_button_mode = ctk.CTkButton(mode_site, text='Alarm', command=focus_alarm)
@@ -99,7 +86,17 @@ place_mode_widget(alarm_button_mode)
 # =========== Content ==============
 # ==================================
 
-# ------------- TIMER --------------
+timing_args = (content_site,
+               TOP_LABEL_POS,
+               top_label_content,
+               timer_button_mode,
+               stop_watch_button_mode,
+               alarm_button_mode)
+
+timer_site = TimeR(*timing_args)
+stop_watch_site = Stop_Watch(*timing_args)
+alarm_site = Alarm(*timing_args)
+
 
 utility.set_default_fg_color()
 utility.set_default_text_color()
