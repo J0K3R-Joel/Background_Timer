@@ -1,8 +1,6 @@
-import threading
 import time
 
 import customtkinter as ctk
-from number_pickR import NumberPicker
 from timing import Timing
 from util import Utility
 
@@ -53,10 +51,12 @@ class Stop_Watch(Timing):
         for widget in removable_widgets:
             widget.destroy()
 
+
     def __pause_stopwatch(self):
         if not self.paused:
             self.elapsed_before_pause += time.perf_counter() - self.start_time
             self.paused = True
+
 
     def __resume_stopwatch(self):
         self.start_time = time.perf_counter()
@@ -75,7 +75,7 @@ class Stop_Watch(Timing):
         self.roundings += 1
         time_string = ''
 
-        if hours != '00': 
+        if hours != '00':
             time_string += hours.lstrip('0') + 'hr :'
         if minutes != '00':
             time_string += minutes.lstrip('0') + 'min : '
@@ -95,10 +95,10 @@ class Stop_Watch(Timing):
         l2.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
 
 
-
     def __stopper(self, pause_button):
         pause_button.configure(text='▶', command=lambda: self.__continuer(pause_button))
         self.__pause_stopwatch()
+
 
     def __continuer(self, pause_button):
         pause_button.configure(text='⏸', command=lambda: self.__stopper(pause_button))
@@ -110,6 +110,7 @@ class Stop_Watch(Timing):
         self.start_time = time.perf_counter()
         self.elapsed_before_pause = 0
         self.__update_stopwatch()
+
 
     def __update_stopwatch(self):
         if self.stopped or self.paused:
@@ -145,8 +146,6 @@ class Stop_Watch(Timing):
         self.master.after(10, self.__update_stopwatch)
 
 
-
-
     def __stop_watch(self, start_button: ctk.CTkButton, pause_button: ctk.CTkButton, rounding_button: ctk.CTkButton, *removable_widgets):
         self.__watch_mode_inactive(start_button, pause_button, rounding_button, *removable_widgets)
 
@@ -154,6 +153,7 @@ class Stop_Watch(Timing):
         self.minutes_time_label.configure(text='00')
         self.seconds_time_label.configure(text='00')
         self.milliseconds_time_label.configure(text='00')
+
 
     def start(self):
         self.top_label_content.configure(text='Stop Watch')

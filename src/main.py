@@ -100,6 +100,6 @@ utility.set_default_fg_color()
 utility.set_default_text_color()
 utility.set_default_button_text_color()
 
-stop_watch_site.start()  # start with the timer (in the future)
+timer_site.start()  # start with the timer (in the future)
 
 app.mainloop()

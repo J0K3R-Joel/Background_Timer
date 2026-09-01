@@ -47,9 +47,20 @@ class TimeR(Timing):
         timer_entry = self.utility.get_entry_by_name('timer')
         timer_content = timer_entry.get().strip()
         timer_text = timer_content if timer_content else 'Timer'
-        self.top_label_content.configure(text=timer_text)
         timer_entry.place_forget()
+        self.top_label_content.configure(text=timer_text)
         self.top_label_content.place(**self.TOP_LABEL_POS)
+        print(self.top_label_content.winfo_width(), self.master.winfo_width(), self.top_label_content.cget('text'))
+        if self.top_label_content.winfo_width() > self.master.winfo_width():
+            while self.top_label_content.winfo_width() > self.master.winfo_width():
+                timer_text = timer_text[0:len(timer_text)-1]  # -1 to remove the last char
+                self.top_label_content.configure(text=timer_text)
+
+            timer_text = timer_text[0:len(timer_text)-2]  # -2 because the 3 dots that get added are approximately 2 "normal" char wide
+            timer_text += '...'
+
+        print(self.top_label_content.winfo_width(), self.master.winfo_width(), self.top_label_content.cget('text'))
+        self.top_label_content.configure(text=timer_text)
 
         hours = self.NUMBERPICKERS['hour']
         minutes = self.NUMBERPICKERS['minute']
