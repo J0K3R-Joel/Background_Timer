@@ -89,9 +89,7 @@ place_mode_widget(alarm_button_mode)
 timing_args = (content_site,
                TOP_LABEL_POS,
                top_label_content,
-               timer_button_mode,
-               stop_watch_button_mode,
-               alarm_button_mode)
+               mode_site)
 
 timer_site = TimeR(*timing_args)
 stop_watch_site = Stop_Watch(*timing_args)

@@ -13,9 +13,11 @@ class Stop_Watch(Timing):
         self.paused = False
         self.stopped = False
         self.elapsed_before_pause = 0
+        self.hours_digits = 2
 
 
     def __watch_mode_active(self, start_button, pause_button, rounding_button):
+        self.disable_mode_buttons()
         text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
         fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
 
@@ -39,6 +41,7 @@ class Stop_Watch(Timing):
 
     def __watch_mode_inactive(self, start_button, pause_button, rounding_button, *removable_widgets):
         start_button.configure(text='Start', fg_color=self.utility.STANDARD_FG_COLOR, text_color=self.utility.STANDARD_BUTTON_TEXT_COLOR,  command=lambda: self.__start_watch(start_button, pause_button, rounding_button))
+        self.enable_mode_buttons()
 
         self.stopped = True
         self.paused = False
@@ -72,7 +75,7 @@ class Stop_Watch(Timing):
         self.roundings += 1
         time_string = ''
 
-        if hours != '000':
+        if hours != '00': 
             time_string += hours.lstrip('0') + 'hr :'
         if minutes != '00':
             time_string += minutes.lstrip('0') + 'min : '
@@ -122,7 +125,19 @@ class Stop_Watch(Timing):
         seconds = int(elapsed) % 60
         centiseconds = int(elapsed * 100) % 100
 
-        self.hours_time_label.configure(text=f"{hours:03d}")
+        if len(str(hours)) > self.hours_digits:
+            self.hours_digits = len(str(hours))
+            kwargs = self.hours_time_label.place_info()
+            kwargs['relx'] = float(kwargs['relx']) - 0.01
+            kwargs['y'] = float(kwargs['y'])
+            kwargs['x'] = float(kwargs['y'])
+            kwargs.pop('width')
+            kwargs.pop('height')
+            self.hours_time_label.place(**kwargs)
+
+
+
+        self.hours_time_label.configure(text=f"{hours:02d}")
         self.minutes_time_label.configure(text=f"{minutes:02d}")
         self.seconds_time_label.configure(text=f"{seconds:02d}")
         self.milliseconds_time_label.configure(text=f"{centiseconds:02d}")
@@ -135,7 +150,7 @@ class Stop_Watch(Timing):
     def __stop_watch(self, start_button: ctk.CTkButton, pause_button: ctk.CTkButton, rounding_button: ctk.CTkButton, *removable_widgets):
         self.__watch_mode_inactive(start_button, pause_button, rounding_button, *removable_widgets)
 
-        self.hours_time_label.configure(text='000')
+        self.hours_time_label.configure(text='00')
         self.minutes_time_label.configure(text='00')
         self.seconds_time_label.configure(text='00')
         self.milliseconds_time_label.configure(text='00')
@@ -145,7 +160,7 @@ class Stop_Watch(Timing):
         self.top_label_content.place(**self.TOP_LABEL_POS)
 
         clock_frame = ctk.CTkFrame(self.master)
-        self.hours_time_label = ctk.CTkLabel(clock_frame, text='000', font=('Arial', 26))
+        self.hours_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
         hour_min_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
         self.minutes_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
         min_sec_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
@@ -153,24 +168,24 @@ class Stop_Watch(Timing):
         sec_millisec_sep = ctk.CTkLabel(clock_frame, text=':', font=('Arial', 26))
         self.milliseconds_time_label = ctk.CTkLabel(clock_frame, text='00', font=('Arial', 26))
 
-        self.hours_time_label.place(relx=0.15, rely=0.5, anchor='center')
-        hour_min_sep.place(relx=0.285, rely=0.5, anchor='center')
-        self.minutes_time_label.place(relx=0.4, rely=0.5, anchor='center')
+        self.hours_time_label.place(relx=0.125, rely=0.5, anchor='center')
+        hour_min_sep.place(relx=0.25, rely=0.5, anchor='center')
+        self.minutes_time_label.place(relx=0.375, rely=0.5, anchor='center')
         min_sec_sep.place(relx=0.5, rely=0.5, anchor='center')
-        self.seconds_time_label.place(relx=0.6, rely=0.5, anchor='center')
-        sec_millisec_sep.place(relx=0.71, rely=0.5, anchor='center')
-        self.milliseconds_time_label.place(relx=0.85, rely=0.5, anchor='center')
+        self.seconds_time_label.place(relx=0.625, rely=0.5, anchor='center')
+        sec_millisec_sep.place(relx=0.75, rely=0.5, anchor='center')
+        self.milliseconds_time_label.place(relx=0.875, rely=0.5, anchor='center')
 
         hours_desc_label = ctk.CTkLabel(clock_frame, text='Hrs.', font=('Arial', 12))
         minutes_desc_label = ctk.CTkLabel(clock_frame, text='Mins.', font=('Arial', 12))
         sec_desc_label = ctk.CTkLabel(clock_frame, text='Secs.', font=('Arial', 12))
         millisec_desc_label = ctk.CTkLabel(clock_frame, text='Millisecs.', font=('Arial', 12))
 
-        hours_desc_label.place(relx=0.15, rely=0.2, anchor='center')
-        minutes_desc_label.place(relx=0.4, rely=0.2, anchor='center')
-        sec_desc_label.place(relx=0.6, rely=0.2, anchor='center')
-        millisec_desc_label.place(relx=0.85, rely=0.2, anchor='center')
-        clock_frame.place(relx=0.5, rely=0.35, relheight=0.3, relwidth=0.3, anchor='center')
+        hours_desc_label.place(relx=0.135, rely=0.2, anchor='center')
+        minutes_desc_label.place(relx=0.38, rely=0.2, anchor='center')
+        sec_desc_label.place(relx=0.625, rely=0.2, anchor='center')
+        millisec_desc_label.place(relx=0.875, rely=0.2, anchor='center')
+        clock_frame.place(relx=0.5, rely=0.35, relheight=0.3, relwidth=0.4, anchor='center')
 
         pause_button = ctk.CTkButton(self.master, text='Pause')  # ▶ ⏸
 
@@ -206,7 +221,8 @@ if __name__ == '__main__':
     app.geometry('700x400')
     top_label_content = ctk.CTkLabel(app, font=('Arial', 25))
     TOP_LABEL_POS = {'relx': 0.5, 'rely': 0.07, 'anchor': 'center'}
+    example_frame = ctk.CTkFrame(app)
 
-    watch = Stop_Watch(app, TOP_LABEL_POS, top_label_content)
+    watch = Stop_Watch(app, TOP_LABEL_POS, top_label_content, example_frame)
     watch.start()
     app.mainloop()

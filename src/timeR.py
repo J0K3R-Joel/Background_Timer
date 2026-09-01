@@ -38,6 +38,7 @@ class TimeR(Timing):
 
     def __change_on_timer(self):
         self.utility.disable_all_buttons_from_scope(self.master)
+        self.disable_mode_buttons()
 
         fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
         text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
@@ -85,6 +86,7 @@ class TimeR(Timing):
 
     def __change_off_timer(self):
         self.utility.enable_all_buttons_from_scope()
+        self.enable_mode_buttons()
         self.utility.change_button_kwargs('Stop', command=self.__start_timer, text='Start', fg_color=self.utility.STANDARD_FG_COLOR, text_color=self.utility.STANDARD_BUTTON_TEXT_COLOR)
 
         timer_entry = self.utility.get_entry_by_name('timer')
