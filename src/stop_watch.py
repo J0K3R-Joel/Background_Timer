@@ -3,6 +3,7 @@ import time
 import customtkinter as ctk
 from timing import Timing
 from util import Utility
+from messageR import MessageR
 
 class Stop_Watch(Timing):
     def __init__(self, *args):
@@ -12,6 +13,7 @@ class Stop_Watch(Timing):
         self.stopped = False
         self.elapsed_before_pause = 0
         self.hours_digits = 2
+        self.msg = MessageR(self.__class__.__name__)
 
 
     def __watch_mode_active(self, start_button, pause_button, rounding_button):
@@ -90,6 +92,7 @@ class Stop_Watch(Timing):
         l2 = ctk.CTkLabel(lap_row, text=time_string)
         l1.pack(side='left', padx=5)
         l2.pack(side='top')
+        self.msg.info(f'Lap {self.roundings} with time "{time_string}" created.')
 
         l1.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
         l2.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
@@ -97,11 +100,13 @@ class Stop_Watch(Timing):
 
     def __stopper(self, pause_button):
         pause_button.configure(text='▶', command=lambda: self.__continuer(pause_button))
+        self.msg.info('paused')
         self.__pause_stopwatch()
 
 
     def __continuer(self, pause_button):
         pause_button.configure(text='⏸', command=lambda: self.__stopper(pause_button))
+        self.msg.info('resumed')
         self.__resume_stopwatch()
 
 
@@ -110,6 +115,7 @@ class Stop_Watch(Timing):
         self.start_time = time.perf_counter()
         self.elapsed_before_pause = 0
         self.__update_stopwatch()
+        self.msg.start()
 
 
     def __update_stopwatch(self):
@@ -128,6 +134,7 @@ class Stop_Watch(Timing):
 
         if len(str(hours)) > self.hours_digits:
             self.hours_digits = len(str(hours))
+            self.msg.info('Hours has now ', self.hours_digits, ' digits.')
             kwargs = self.hours_time_label.place_info()
             kwargs['relx'] = float(kwargs['relx']) - 0.01
             kwargs['y'] = float(kwargs['y'])
@@ -153,6 +160,8 @@ class Stop_Watch(Timing):
         self.minutes_time_label.configure(text='00')
         self.seconds_time_label.configure(text='00')
         self.milliseconds_time_label.configure(text='00')
+        self.msg.end()
+
 
 
     def start(self):
@@ -219,7 +228,7 @@ class Stop_Watch(Timing):
 if __name__ == '__main__':
     app = ctk.CTk()
     app.geometry('700x400')
-    top_label_content = ctk.CTkLabel(app, font=('Arial', 25))
+    top_label_content = ctk.CTkLabel(app, font=('Arial', 22))
     TOP_LABEL_POS = {'relx': 0.5, 'rely': 0.07, 'anchor': 'center'}
     example_frame = ctk.CTkFrame(app)
 

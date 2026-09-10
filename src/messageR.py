@@ -6,7 +6,7 @@ class MessageR:
     def __write__(self, *messages, status: str):
         text = ''.join(messages)
         final_message = f'> {status.upper()} - ' + self.default_str + text
-        print(final_message, flush=True)
+        print(final_message, flush=True)  # replace this with writing in a file in the future
 
     def warning(self, *messages):
         self.__write__(*messages, status='warning')
@@ -22,6 +22,12 @@ class MessageR:
 
     def good(self, *messages):
         self.__write__(*messages, status='good')
+
+    def start(self):
+        self.__write__(self.name, ' has started!', status='start')
+
+    def end(self):
+        self.__write__(self.name, ' has ended!', status='end')
 
 
 

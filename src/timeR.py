@@ -8,33 +8,57 @@ from circular_progress_bar import CircularProgressBar
 from number_pickR import NumberPicker
 from messageR import MessageR
 from util import Utility
-from fileR import FileR
-from pathR import PathR
 from timing import Timing
+from constants import Constants
 
 class TimeR(Timing):
-    def __init__(self, *args):
-        Timing.__init__(self, *args)
+    DEFAULT_NAMES = {
+        'volume': 'sound_volume',
+        'loop': 'sound_loop',
+        'endless': 'endless_loop',
+        'hidden': 'timer_hidden'
 
-        self.ENDLESS_LOOP = False
-        self.SOUND_LOOPS = 3
-        self.SOUND_VOLUME = 10
+    }
+
+    DEFAULT_CONSTANTS = {
+        DEFAULT_NAMES['volume']: 75,
+        DEFAULT_NAMES['loop']: 3,
+        DEFAULT_NAMES['endless']: False,
+        DEFAULT_NAMES['hidden']: True
+    }
+
+
+    def __init__(self, *args, app):
+        Timing.__init__(self, *args)
+        self.__app = app
+        self.constants = Constants(self)
         self.TIMER_RUNNING = False
         self.NUMBERPICKERS = {}
-        self.paths = PathR()
         self.utility = Utility(self.master)
-        self.file_man = FileR(self.paths.get_base_path_timer())
-        self.msg = MessageR('TimeR')
+        self.msg = MessageR(self.__class__.__name__)
+        self.__load_saved_configs()
 
-    def __endless_loop(self):
-        self.ENDLESS_LOOP = True if self.endless_var.get() else False
-        loop_entry = self.utility.get_entry_by_name('loop')
-        if self.ENDLESS_LOOP:
-            loop_entry.set('∞')
-            loop_entry.configure(state=ctk.DISABLED)
+    def __load_saved_configs(self):
+        dd = self.constants.get_default_dict()
+        self.ENDLESS_LOOP = dd[self.DEFAULT_NAMES['endless']]
+        self.SOUND_LOOPS = dd[self.DEFAULT_NAMES['loop']]
+        self.SOUND_VOLUME = dd[self.DEFAULT_NAMES['volume']]
+        self.HIDDEN_TIMER = dd[self.DEFAULT_NAMES['hidden']]
+
+    def __change_setting(self, setting_name: str):
+        if setting_name == self.DEFAULT_NAMES.get('volume'):
+            new_value = self.SOUND_VOLUME
+        elif setting_name == self.DEFAULT_NAMES.get('endless'):
+            new_value = self.ENDLESS_LOOP
+        elif setting_name == self.DEFAULT_NAMES.get('loop'):
+            new_value = self.SOUND_LOOPS
+        elif setting_name == self.DEFAULT_NAMES.get('hidden'):
+            new_value = self.HIDDEN_TIMER
         else:
-            loop_entry.configure(state=ctk.NORMAL)
-            loop_entry.set(f'{self.SOUND_LOOPS}')
+            raise NotImplementedError(setting_name, ' does not exist')
+
+        self.constants.change_element(setting_name, new_value)
+
 
     def __change_on_timer(self):
         self.utility.disable_all_buttons_from_scope(self.master)
@@ -42,7 +66,7 @@ class TimeR(Timing):
 
         fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
         text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
-        self.utility.change_button_kwargs('Start', command=self.__stop_timer, state=ctk.NORMAL, text='Stop', fg_color=fg_color, text_color=text_color)
+        self.utility.change_button_kwargs_text('Start', command=self.__stop_timer, state=ctk.NORMAL, text='Stop', fg_color=fg_color, text_color=text_color)
 
         timer_entry = self.utility.get_entry_by_name('timer')
         timer_content = timer_entry.get().strip()
@@ -50,16 +74,23 @@ class TimeR(Timing):
         timer_entry.place_forget()
         self.top_label_content.configure(text=timer_text)
         self.top_label_content.place(**self.TOP_LABEL_POS)
-        print(self.top_label_content.winfo_width(), self.master.winfo_width(), self.top_label_content.cget('text'))
         if self.top_label_content.winfo_width() > self.master.winfo_width():
+            last_half_text = timer_text[len(timer_text) // 2:]
+            space_index = last_half_text.find(' ')
+            if space_index != -1:
+                last_half_text = last_half_text[0:space_index] + '\n' + last_half_text[space_index:]
+                timer_text = timer_text[0:len(timer_text) // 2] + last_half_text
+                self.top_label_content.configure(text=timer_text)
+            original_length = len(timer_text)
+
             while self.top_label_content.winfo_width() > self.master.winfo_width():
                 timer_text = timer_text[0:len(timer_text)-1]  # -1 to remove the last char
                 self.top_label_content.configure(text=timer_text)
 
-            timer_text = timer_text[0:len(timer_text)-2]  # -2 because the 3 dots that get added are approximately 2 "normal" char wide
-            timer_text += '...'
+            if len(timer_text) < original_length:
+                timer_text = timer_text[0:len(timer_text)-2]  # -2 because the 3 dots that get added are approximately 2 "normal" char wide
+                timer_text += '...'
 
-        print(self.top_label_content.winfo_width(), self.master.winfo_width(), self.top_label_content.cget('text'))
         self.top_label_content.configure(text=timer_text)
 
         hours = self.NUMBERPICKERS['hour']
@@ -83,6 +114,9 @@ class TimeR(Timing):
         self.future_time_label.configure(text=f'until: {future_time.strftime(time_format)}')
 
         self.__handle_progress_bar_shown(hours, minutes, seconds)
+        if self.HIDDEN_TIMER:
+            self.__app.withdraw()
+
 
     def __handle_progress_bar_shown(self, hours, minutes, seconds):
         real_seconds = hours.get() * 60 * 60 + minutes.get() * 60 + seconds.get()
@@ -94,11 +128,12 @@ class TimeR(Timing):
         self.progress_bar.place_forget()
 
 
-
     def __change_off_timer(self):
         self.utility.enable_all_buttons_from_scope()
         self.enable_mode_buttons()
-        self.utility.change_button_kwargs('Stop', command=self.__start_timer, text='Start', fg_color=self.utility.STANDARD_FG_COLOR, text_color=self.utility.STANDARD_BUTTON_TEXT_COLOR)
+
+        button = self.utility.get_specific_button_from_scope('Stop') if not None else self.utility.get_specific_button_from_scope('Start')
+        self.utility.change_button_kwargs_widget(button, command=self.__start_timer, text='Start', fg_color=self.utility.STANDARD_FG_COLOR, text_color=self.utility.STANDARD_BUTTON_TEXT_COLOR)
 
         timer_entry = self.utility.get_entry_by_name('timer')
         timer_entry.set(self.top_label_content.cget('text'))
@@ -110,6 +145,12 @@ class TimeR(Timing):
         self.future_time_label.configure(text='')
 
         self.__handle_progress_bar_hidden()
+
+    def __show_hidden_accept_window(self):
+        pass
+
+    def __hide_hidden_accept_window(self):
+        pass
 
     def __stop_timer(self):
         self.TIMER_RUNNING = False
@@ -133,13 +174,21 @@ class TimeR(Timing):
             self.utility.show_warning_text('The timer can not have negative loops!', 4)
             return
 
+        self.SOUND_LOOPS = loops
+        self.__change_setting(self.DEFAULT_NAMES['loop'])
+        if self.HIDDEN_TIMER:
+            self.__show_hidden_accept_window()
+
         def run_timer(hours, minutes, seconds, loops, volume):
             try:
+                if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
+                    self.utility.show_warning_text('Set a time before starting the Timer', 2)
+                    return
                 self.__change_on_timer()
                 hours.block_mouse()
                 minutes.block_mouse()
                 seconds.block_mouse()
-                self.msg.info('Timer has started!')
+                self.msg.start()
                 self.TIMER_RUNNING = True
                 already_set = False
                 i = 0
@@ -159,15 +208,16 @@ class TimeR(Timing):
                     if not already_set and (hours.get() != 0 or minutes.get() != 0 or seconds.get() != 0):
                             seconds.decrease()
                     if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
-                        self.msg.good('Timer ended successfully!')
+                        self.msg.end()
                         break
                     if already_set:
                         already_set = False
                     time.sleep(1)
 
                 if self.TIMER_RUNNING:
-                    self.SOUND_LOOPS = loops
-                    threading.Thread(target=self.__play_sound, args=(self.SOUND_LOOPS, volume,), daemon=True).start()
+                    if self.HIDDEN_TIMER:
+                        self.__app.deiconify()
+                    threading.Thread(target=self.__play_sound, args=(loops, volume,), daemon=True).start()
 
                 while self.TIMER_RUNNING:
                     continue
@@ -203,14 +253,24 @@ class TimeR(Timing):
         self.msg.info('Sound ended')
 
     def __hide_timer(self):
-        pass
+        self.HIDDEN_TIMER = True if self.hidden_var.get() else False
+        self.__change_setting(self.DEFAULT_NAMES['hidden'])
+
+    def __endless_loop(self):
+        self.ENDLESS_LOOP = True if self.endless_var.get() else False
+        self.__change_setting(self.DEFAULT_NAMES['endless'])
+        loop_entry = self.utility.get_entry_by_name('loop')
+        if self.ENDLESS_LOOP:
+            loop_entry.set('∞')
+            loop_entry.configure(state=ctk.DISABLED)
+        else:
+            loop_entry.configure(state=ctk.NORMAL)
+            loop_entry.set(f'{self.SOUND_LOOPS}')
 
     def __set_volume(self, value):
         self.SOUND_VOLUME = value
+        self.__change_setting(self.DEFAULT_NAMES['volume'])
         self.volume_value_label.configure(text=f'{int(self.SOUND_VOLUME)}%')
-
-    def __save_timer(self):
-        self.file_man.writer('test_file.txt', 'w', 'this is a simple test file')
 
     def __create_numberpickers(self, hours: NumberPicker, minutes: NumberPicker, seconds: NumberPicker):
         self.NUMBERPICKERS['hour'] = hours
@@ -250,14 +310,17 @@ class TimeR(Timing):
         button_start_timer = ctk.CTkButton(self.master, text='Start', command=self.__start_timer)
         button_start_timer.place(relx=0.5, rely=0.6, anchor='center')
 
-        hide_checkbox = ctk.CTkCheckBox(self.master, text='Hide Timer', command=self.__hide_timer)
-        hide_checkbox.select()
+        self.hidden_var = ctk.StringVar(value='hidden') if self.HIDDEN_TIMER else ctk.StringVar(value='')
+        hide_checkbox = ctk.CTkCheckBox(self.master, text='Hide Timer', command=self.__hide_timer, variable=self.hidden_var, onvalue='hidden', offvalue='')
         hide_checkbox.place(relx=0.05, rely=0.75)
 
         loop_frame = ctk.CTkFrame(self.master)
         loop_label = ctk.CTkLabel(loop_frame, text='Loop Count:')
-        loop_entry = ctk.CTkEntry(loop_frame, placeholder_text=f'{self.SOUND_LOOPS}')
-        loop_entry.set(f'{self.SOUND_LOOPS}')
+        loop_start_text = '∞' if self.ENDLESS_LOOP else self.SOUND_LOOPS
+        loop_start_state = ctk.DISABLED if self.ENDLESS_LOOP else ctk.NORMAL
+        loop_entry = ctk.CTkEntry(loop_frame, placeholder_text=f'{loop_start_text}')
+        loop_entry.set(f'{loop_start_text}')
+        loop_entry.configure(state=loop_start_state)
         loop_label.place(relx=0, relwidth=0.4)
         loop_entry.place(relx=0.4, relwidth=0.6)
         loop_frame.place(relx=0.65, rely=0.75, relheight=0.1)
@@ -265,14 +328,14 @@ class TimeR(Timing):
         volume_frame = ctk.CTkFrame(self.master)
         volume_label = ctk.CTkLabel(volume_frame, text='Volume')
         volume_slider = ctk.CTkSlider(volume_frame, orientation='vertical', scroll_step=0, from_=0, to=100, number_of_steps=100, command=self.__set_volume)
-        self.volume_value_label = ctk.CTkLabel(volume_frame, text=f'{self.SOUND_VOLUME}%')
+        self.volume_value_label = ctk.CTkLabel(volume_frame, text=f'{int(self.SOUND_VOLUME)}%')
         volume_slider.set(self.SOUND_VOLUME)
         volume_label.place(relx=0.2, rely=0.45, anchor='center')
         volume_slider.place(relx=0.5, rely=0.5, relheight=0.8, anchor='center')
         self.volume_value_label.place(relx=0.5, rely=0.03, anchor='center')
         volume_frame.place(relx=0.95, rely=0.45, relheight=0.53, relwidth=0.2, anchor='center')
 
-        self.endless_var = ctk.StringVar(value='')
+        self.endless_var = ctk.StringVar(value='endless') if self.ENDLESS_LOOP else ctk.StringVar(value='')
         endless_loop_checkbox = ctk.CTkCheckBox(self.master, text='Endless Loop', command=self.__endless_loop, variable=self.endless_var, onvalue='endless', offvalue='')
         endless_loop_checkbox.place(relx=0.05, rely=0.825)
 

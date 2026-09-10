@@ -73,9 +73,8 @@ class FileR:
 		file_name = file_name.replace(self.forbidden_path_seperator, self.allowed_path_seperator)
 
 		if file_name.find(self.base_directory) != 0:
-			if self.base_directory.endswith(self.allowed_path_seperator):
-				if file_name.find(self.allowed_path_seperator) == 0:
-					file_name = file_name[1:]
+			if file_name.find(self.allowed_path_seperator) == 0:
+				file_name = file_name[1:]
 			file_name = os.path.join(self.base_directory + file_name)
 
 		return file_name
@@ -93,6 +92,35 @@ class FileR:
 			str: base path
 		"""
 		return self.base_directory
+
+	def get_files_in_path(self, path: str = '') -> list:
+		"""
+		Receive all files in the given directory
+
+		Args:
+			path (str, optional): the path to where it should search for files (default: base_directory)
+
+		Returns:
+			List[str]: ['File1', 'File2.txt', ...] -> List with the file names and extension
+		"""
+		p = self._separate_file_from_path(path)[0]
+		correct_path = self._build_file_path(p)
+		return next(os.walk(correct_path), (None, None, []))[2]
+
+	def get_directories_in_path(self, path: str = '') -> list:
+		"""
+		Receive all subdirectories in the given directory
+
+		Args:
+			path (str, optional): the path to where it should search for subdirectories (default: base_directory)
+
+		Returns:
+			List[str]: ['Dir1', 'Dir2', ...] -> List with the subdirectory name
+		"""
+		p = self._separate_file_from_path(path)[0]
+		correct_path = self._build_file_path(p)
+		return next(os.walk(correct_path))[1]
+
 
 	# ======================== SETTER =======================
 	def set_base_directory(self, path: str) -> None:

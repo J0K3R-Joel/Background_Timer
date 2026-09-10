@@ -1,5 +1,4 @@
 import time
-import os
 import threading
 import customtkinter as ctk
 import builtins
@@ -165,7 +164,7 @@ class Utility():
                     widget.configure(state=ctk.NORMAL)
 
 
-    def get_specific_button_from_scope(self, button_text: str, scope = None):
+    def get_specific_button_from_scope(self, button_text: str, scope = None) -> ctk.CTkButton | None:
         scope = self.master if scope == None else scope
 
         all_widgets = self.get_widgets_from_scope([], scope.winfo_children())
@@ -173,12 +172,19 @@ class Utility():
             if isinstance(widget, ctk.CTkButton):
                 if widget.cget('text').upper() == button_text.upper():
                     return widget
+        return None
 
-    def change_button_kwargs(self, button_text: str, scope=None, **kwargs):
+    def change_button_kwargs_text(self, button_text: str, scope=None, **kwargs):
         scope = self.master if scope == None else scope
 
         button = self.get_specific_button_from_scope(button_text, scope)
         button.configure(**kwargs)
+
+    def change_button_kwargs_widget(self, button: ctk.CTkButton, **kwargs):
+        if button:
+            button.configure(**kwargs)
+        else:
+            self.msg.warning('Button does not exist')
 
     def clear_scope(self, scope = None):
         scope = self.master if scope == None else scope

@@ -1,4 +1,3 @@
-import os
 import customtkinter as ctk
 import pygame
 from messageR import MessageR
@@ -19,7 +18,6 @@ msg = MessageR('Global')
 utility = Utility(app)
 
 pygame.mixer.init()
-pygame.init()
 pygame.mixer.music.load('..\\media\\Ringtone.mp3')
 
 
@@ -32,9 +30,10 @@ def clear_page() -> ctk.CTkLabel:
     utility.clear_scope(content_site)
     border_heading_content = ctk.CTkFrame(content_site, corner_radius=0, fg_color=utility.STANDARD_FG_COLOR)
     border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
-    top_label_content = ctk.CTkLabel(content_site, font=('Arial', 25))
+    top_label_content = ctk.CTkLabel(content_site, font=('Arial', 22))
 
     return top_label_content
+
 
 def place_mode_widget(widget: ctk) -> None:
     curr_widget_number = len(PLACEMENT_WIDGETS)
@@ -42,6 +41,7 @@ def place_mode_widget(widget: ctk) -> None:
 
     y_cord = MODE_START_Y + MODE_Y_INCREASER * curr_widget_number
     widget.place(relx=0.5, rely=y_cord, anchor='center')
+
 
 def focus_timer():
     label = clear_page()
@@ -91,7 +91,7 @@ timing_args = (content_site,
                top_label_content,
                mode_site)
 
-timer_site = TimeR(*timing_args)
+timer_site = TimeR(*timing_args, app=app)
 stop_watch_site = Stop_Watch(*timing_args)
 alarm_site = Alarm(*timing_args)
 
