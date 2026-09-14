@@ -5,5 +5,5 @@ class Alarm(Timing):
     def __init__(self, *args):
         Timing.__init__(self, *args)
 
-    def start(self):
+    def build(self):
         pass

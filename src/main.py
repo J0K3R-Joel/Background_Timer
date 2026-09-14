@@ -1,5 +1,5 @@
 import customtkinter as ctk
-import pygame
+import pygame.mixer as mixer
 from messageR import MessageR
 from util import Utility
 from timeR import TimeR
@@ -17,8 +17,8 @@ TOP_LABEL_POS = {'relx': 0.5, 'rely': 0.07, 'anchor': 'center'}
 msg = MessageR('Global')
 utility = Utility(app)
 
-pygame.mixer.init()
-pygame.mixer.music.load('..\\media\\Ringtone.mp3')
+mixer.init()
+mixer.music.load('.\\media\\Ringtone.mp3')
 
 
 MODE_START_Y = 0.25
@@ -46,17 +46,17 @@ def place_mode_widget(widget: ctk) -> None:
 def focus_timer():
     label = clear_page()
     timer_site.set_top_label_content(label)
-    timer_site.start()
+    timer_site.build()
 
 def focus_alarm():
     label = clear_page()
     alarm_site.set_top_label_content(label)
-    alarm_site.start()
+    alarm_site.build()
 
 def focus_stop_watch():
     label = clear_page()
     stop_watch_site.set_top_label_content(label)
-    stop_watch_site.start()
+    stop_watch_site.build()
 
 
 mode_site.place(relx=0, rely=0, relwidth=0.2, relheight=1)
@@ -95,11 +95,11 @@ timer_site = TimeR(*timing_args, app=app)
 stop_watch_site = Stop_Watch(*timing_args)
 alarm_site = Alarm(*timing_args)
 
-
+utility.set_default_button_text_color()
 utility.set_default_fg_color()
 utility.set_default_text_color()
 utility.set_default_button_text_color()
 
-timer_site.start()  # start with the timer (in the future)
+timer_site.build()
 
 app.mainloop()

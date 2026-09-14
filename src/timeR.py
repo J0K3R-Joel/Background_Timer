@@ -1,5 +1,6 @@
 import customtkinter as ctk
-import pygame
+import pywinstyles
+import pygame.mixer as mixer
 import threading
 import time
 from datetime import datetime, timedelta
@@ -38,12 +39,14 @@ class TimeR(Timing):
         self.msg = MessageR(self.__class__.__name__)
         self.__load_saved_configs()
 
+
     def __load_saved_configs(self):
         dd = self.constants.get_default_dict()
         self.ENDLESS_LOOP = dd[self.DEFAULT_NAMES['endless']]
         self.SOUND_LOOPS = dd[self.DEFAULT_NAMES['loop']]
         self.SOUND_VOLUME = dd[self.DEFAULT_NAMES['volume']]
         self.HIDDEN_TIMER = dd[self.DEFAULT_NAMES['hidden']]
+
 
     def __change_setting(self, setting_name: str):
         if setting_name == self.DEFAULT_NAMES.get('volume'):
@@ -146,16 +149,165 @@ class TimeR(Timing):
 
         self.__handle_progress_bar_hidden()
 
-    def __show_hidden_accept_window(self):
-        pass
+    def __make_label_fit_in_frame(self, label: ctk.CTkLabel, parent_frame: ctk.CTkFrame):
+        while not parent_frame.winfo_ismapped():
+            self.master.update_idletasks()
 
-    def __hide_hidden_accept_window(self):
-        pass
+        while not label.winfo_ismapped():
+            self.master.update_idletasks()
+
+        frame_x = parent_frame.winfo_rootx()
+        label_x = label.winfo_rootx()
+
+        padding_left = label_x - frame_x
+        max_width = parent_frame.winfo_width() - padding_left
+
+        original_text = label.cget("text")
+        paragraphs = original_text.split("\n")
+        lines = []
+
+        for paragraph in paragraphs:
+            words = paragraph.split(" ")
+            current_line = ""
+
+            for word in words:
+                if current_line:
+                    test_line = current_line + " " + word
+                else:
+                    test_line = word
+
+                test_text = "\n".join(lines + [test_line])
+
+                label.configure(text=test_text)
+                label.update_idletasks()
+
+                if label.winfo_width() <= max_width:
+                    current_line = test_line
+                    continue
+
+                if current_line:
+                    lines.append(current_line)
+                    current_line = ""
+
+                label.configure(text="\n".join(lines + [word]))
+                label.update_idletasks()
+
+                if label.winfo_width() <= max_width:
+                    current_line = word
+                    continue
+
+                remaining = word
+
+                while remaining:
+                    part = ""
+
+                    for char in remaining:
+                        test_part = part + char
+
+                        label.configure(
+                            text="\n".join(
+                                lines + [current_line + test_part + "-"]
+                            )
+                        )
+                        label.update_idletasks()
+
+                        if label.winfo_width() <= max_width:
+                            part = test_part
+                        else:
+                            break
+
+                    if not part:
+                        part = remaining[0]
+
+                    remaining = remaining[len(part):]
+
+                    if remaining:
+                        lines.append(current_line + part + "-")
+                        current_line = ""
+                    else:
+                        current_line += part
+
+            if current_line:
+                lines.append(current_line)
+
+        final_text = "\n".join(lines)
+
+        label.configure(text=final_text)
+        label.update_idletasks()
+
+    def __show_hidden_accept_window(self):
+        self.utility.disable_all_buttons_from_scope(self.master)
+        pywinstyles.set_opacity(self.master, value=0.1)
+        pywinstyles.set_opacity(self.get_mode_site(), value=0.2)
+
+        self._hidden_accept_window_frame = ctk.CTkFrame(self.__app, fg_color='transparent', border_width=3, border_color=self.utility.complementaryColor(self.utility.STANDARD_BACKGROUND_COLOR))
+        information_header_label = ctk.CTkLabel(self._hidden_accept_window_frame, text='The "Hide Timer" checkbox is selected!', font=('Arial', 18))
+        information_text_label = ctk.CTkLabel(self._hidden_accept_window_frame, justify='left', text='This will set the timer in the background and you will not be able to change or stop it again. This window will move to the foreground again, when the time is over. Only then you can modify the timer again!')
+        accept_button = ctk.CTkButton(self._hidden_accept_window_frame, text="I don't need to stop/modify the timer", command=self.__accept_hidden_accept_window)
+        decline_button = ctk.CTkButton(self._hidden_accept_window_frame, text="I want to stop/modify the timer", command=self.__decline_hidden_accept_window)
+
+        choice_placement = 0.25
+
+        information_header_label.place(relx=0.5, rely=0.1, anchor='center')
+        information_text_label.place(relx=0.02, rely=0.4, anchor='w')
+        accept_button.place(relx=1-choice_placement, rely=0.9, anchor='center')
+        decline_button.place(relx=choice_placement, rely=0.9, anchor='center')
+        self._hidden_accept_window_frame.place(relx=0.6, rely=0.5, relwidth=0.65, relheight=0.5, anchor='center')
+
+        self.__make_label_fit_in_frame(information_text_label, self._hidden_accept_window_frame)
+        self.utility.set_default_button_text_color(self._hidden_accept_window_frame)
+        self.utility.set_default_fg_color(self._hidden_accept_window_frame)
+        self.utility.set_default_button_text_color(self._hidden_accept_window_frame)
+
+        width_diff = (accept_button.winfo_width() - decline_button.winfo_width())
+        accept_button.place(relx=1-choice_placement-(width_diff/1000/2))  # /1000 to make it size-wise appropiate, /2 because its centered and doesnt need to go all the way to the left (it only needs to go half way)
+
+        fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
+        text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
+        decline_button.configure(fg_color=fg_color, text_color=text_color)
+
+
+
+    def __accept_hidden_accept_window(self):
+        self._hidden_accept_window_frame.destroy()
+        self.utility.enable_all_buttons_from_scope(self.master)
+        pywinstyles.set_opacity(self.master, value=1)
+        pywinstyles.set_opacity(self.get_mode_site(), value=1)
+        threading.Thread(target=self.__run_timer).start()
+
+
+    def __decline_hidden_accept_window(self):
+        self._hidden_accept_window_frame.destroy()
+        self.utility.enable_all_buttons_from_scope(self.master)
+        pywinstyles.set_opacity(self.master, value=1)
+        pywinstyles.set_opacity(self.get_mode_site(), value=1)
+
+    def __check_valid_timer(self) -> bool:
+        loops = self.utility.handle_entry_name_return('loop', 'int', 'invalid', '∞')
+        hours = self.NUMBERPICKERS['hour']
+        minutes = self.NUMBERPICKERS['minute']
+        seconds = self.NUMBERPICKERS['second']
+
+        if loops == 'invalid':
+            self.utility.show_warning_text('The loop count has to be a number!', 4)
+            return False
+
+        if isinstance(loops, int) and not loops >= 0:
+            self.utility.show_warning_text('The timer can not have negative loops!', 4)
+            return False
+
+        if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
+            self.utility.show_warning_text('Set a time before starting the Timer', 2)
+            return False
+
+        self.SOUND_LOOPS = loops
+        self.__change_setting(self.DEFAULT_NAMES['loop'])
+        return True
 
     def __stop_timer(self):
         self.TIMER_RUNNING = False
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.stop()
+        if mixer.music.get_busy():
+            mixer.music.stop()
         hours = self.NUMBERPICKERS['hour']
         minutes = self.NUMBERPICKERS['minute']
         seconds = self.NUMBERPICKERS['second']
@@ -163,98 +315,90 @@ class TimeR(Timing):
         minutes.set(0)
         seconds.set(0)
 
+
     def __start_timer(self) -> None:
-        loops = self.utility.handle_entry_name_return('loop', 'int', 'invalid', '∞')
-        volume = self.SOUND_VOLUME / 100
-        if loops == 'invalid':
-            self.utility.show_warning_text('The loop count has to be a number!', 4)
-            return
-
-        if isinstance(loops, int) and not loops >= 0:
-            self.utility.show_warning_text('The timer can not have negative loops!', 4)
-            return
-
-        self.SOUND_LOOPS = loops
-        self.__change_setting(self.DEFAULT_NAMES['loop'])
         if self.HIDDEN_TIMER:
             self.__show_hidden_accept_window()
+        else:
+            threading.Thread(target=self.__run_timer).start()
 
-        def run_timer(hours, minutes, seconds, loops, volume):
-            try:
-                if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
-                    self.utility.show_warning_text('Set a time before starting the Timer', 2)
-                    return
-                self.__change_on_timer()
-                hours.block_mouse()
-                minutes.block_mouse()
-                seconds.block_mouse()
-                self.msg.start()
-                self.TIMER_RUNNING = True
-                already_set = False
-                i = 0
 
-                while self.TIMER_RUNNING:
-                    i += 1
-                    self.progress_bar.set_value(i)
-                    if hours.get() != 0 and minutes.get() == 0 and seconds.get() == 0:
-                        hours.decrease()
-                        minutes.set(minutes.get_max())
-                        seconds.set(seconds.get_max())
-                        already_set = True
-                    if not already_set and (minutes.get() != 0 and seconds.get() == 0):
-                        minutes.decrease()
-                        seconds.set(seconds.get_max())
-                        already_set = True
-                    if not already_set and (hours.get() != 0 or minutes.get() != 0 or seconds.get() != 0):
-                            seconds.decrease()
-                    if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
-                        self.msg.end()
-                        break
-                    if already_set:
-                        already_set = False
-                    time.sleep(1)
-
-                if self.TIMER_RUNNING:
-                    if self.HIDDEN_TIMER:
-                        self.__app.deiconify()
-                    threading.Thread(target=self.__play_sound, args=(loops, volume,), daemon=True).start()
-
-                while self.TIMER_RUNNING:
-                    continue
-            except Exception as e:
-                self.msg.bad('Timer has ended with a problem: ' + str(e))
-            finally:
-                self.__change_off_timer()
-                hours.unblock_mouse()
-                minutes.unblock_mouse()
-                seconds.unblock_mouse()
-                self.TIMER_RUNNING = False
+    def __run_timer(self):
+        if not self.__check_valid_timer():
+            return
 
         hours = self.NUMBERPICKERS['hour']
         minutes = self.NUMBERPICKERS['minute']
         seconds = self.NUMBERPICKERS['second']
-        threading.Thread(target=run_timer, args=(hours, minutes, seconds, loops, volume,), daemon=True).start()
+        try:
+            self.__change_on_timer()
+            hours.block_mouse()
+            minutes.block_mouse()
+            seconds.block_mouse()
+            self.msg.start()
+            self.TIMER_RUNNING = True
+            already_set = False
+            i = 0
 
-    def __play_sound(self, loops: int, volume: float) -> None:
-        pygame.mixer.music.set_volume(volume)
-        self.msg.info('Sound playing')
-        if isinstance(loops, str):
             while self.TIMER_RUNNING:
-                pygame.mixer.music.play()
-                while pygame.mixer.music.get_busy():
-                    continue
+                i += 1
+                self.progress_bar.set_value(i)
+                if hours.get() != 0 and minutes.get() == 0 and seconds.get() == 0:
+                    hours.decrease()
+                    minutes.set(minutes.get_max())
+                    seconds.set(seconds.get_max())
+                    already_set = True
+                if not already_set and (minutes.get() != 0 and seconds.get() == 0):
+                    minutes.decrease()
+                    seconds.set(seconds.get_max())
+                    already_set = True
+                if not already_set and (hours.get() != 0 or minutes.get() != 0 or seconds.get() != 0):
+                    seconds.decrease()
+                if hours.get() == 0 and minutes.get() == 0 and seconds.get() == 0:
+                    self.msg.end()
+                    break
+                if already_set:
+                    already_set = False
+                time.sleep(1)
+
+            if self.HIDDEN_TIMER:
+                self.__app.deiconify()
+            self.__play_sound()
+
+        except Exception as e:
+            self.msg.bad('Timer has ended with a problem: ' + str(e))
+        finally:
+            self.TIMER_RUNNING = False
+            self.__change_off_timer()
+            hours.unblock_mouse()
+            minutes.unblock_mouse()
+            seconds.unblock_mouse()
+
+
+    def __play_sound(self) -> None:
+        mixer.music.set_volume(self.SOUND_VOLUME/100)
+        self.msg.info('Sound playing')
+        if isinstance(self.SOUND_LOOPS, str):  # endless loop
+            while self.TIMER_RUNNING:
+                mixer.music.play()
+                while mixer.music.get_busy():
+                    self.master.update_idletasks()
         else:
-            for i in range(loops):
+            for i in range(self.SOUND_LOOPS):
                 if self.TIMER_RUNNING:
-                    pygame.mixer.music.play()
-                    while pygame.mixer.music.get_busy():
-                        continue
+                    mixer.music.play()
+                    while mixer.music.get_busy():
+                        self.master.update_idletasks()
+                else:
+                    break
 
         self.msg.info('Sound ended')
+
 
     def __hide_timer(self):
         self.HIDDEN_TIMER = True if self.hidden_var.get() else False
         self.__change_setting(self.DEFAULT_NAMES['hidden'])
+
 
     def __endless_loop(self):
         self.ENDLESS_LOOP = True if self.endless_var.get() else False
@@ -267,10 +411,12 @@ class TimeR(Timing):
             loop_entry.configure(state=ctk.NORMAL)
             loop_entry.set(f'{self.SOUND_LOOPS}')
 
+
     def __set_volume(self, value):
         self.SOUND_VOLUME = value
         self.__change_setting(self.DEFAULT_NAMES['volume'])
         self.volume_value_label.configure(text=f'{int(self.SOUND_VOLUME)}%')
+
 
     def __create_numberpickers(self, hours: NumberPicker, minutes: NumberPicker, seconds: NumberPicker):
         self.NUMBERPICKERS['hour'] = hours
@@ -278,7 +424,7 @@ class TimeR(Timing):
         self.NUMBERPICKERS['second'] = seconds
 
 
-    def start(self):
+    def build(self):
         timer_entry_content = EntryExpanding(self.master, space_count=16, start_text='Timer     ',  placeholder_text='Timer', font=('Arial', 25))
         timer_entry_content.place(**self.TOP_LABEL_POS)
 
@@ -365,4 +511,5 @@ class TimeR(Timing):
         self.utility.hide_all_frames()
         self.utility.set_default_button_text_color()
         self.utility.set_default_fg_color()
+        self.utility.set_default_text_color()
         self.utility.set_default_button_text_color()

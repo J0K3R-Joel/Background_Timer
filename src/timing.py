@@ -15,10 +15,10 @@ class Timing():
         self.path_man = PathR(self.__class__.__name__)
 
 
-    def start(self):
+    def build(self):
         pass
 
-    def __get_mode_site(self):
+    def get_mode_site(self):
         return self._mode_site
 
     def set_top_label_content(self, label: ctk.CTkLabel):

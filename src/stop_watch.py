@@ -164,7 +164,7 @@ class Stop_Watch(Timing):
 
 
 
-    def start(self):
+    def build(self):
         self.top_label_content.configure(text='Stop Watch')
         self.top_label_content.place(**self.TOP_LABEL_POS)
 
@@ -220,6 +220,7 @@ class Stop_Watch(Timing):
         self.utility.hide_all_frames()
         self.utility.set_default_button_text_color()
         self.utility.set_default_fg_color()
+        self.utility.set_default_text_color()
         self.utility.set_default_button_text_color()
 
 
