@@ -70,7 +70,7 @@ class EntryExpanding(ctk.CTkEntry):
                 else:
                     break
 
-            spaces_start -= 4  # so that the text isnt cut off at the left side (4 spaces need to stay)
+            spaces_start -= 4  # so that the text isn't cut off at the left side (4 spaces need to stay)
 
 
             if len(text) > spaces_start + spaces_end:
@@ -89,11 +89,6 @@ class EntryExpanding(ctk.CTkEntry):
 
                 self.entry_value.set(text)
                 self.sizer.configure(text=text)
-
-
-
-
-
 
 
     # @TODO: wenn sich das entry updaten schauen, ob es weniger als bspw 4 leerzeichen am anfang hat, wenn schon, dann füge so viele hinzu, dass es 4 sind

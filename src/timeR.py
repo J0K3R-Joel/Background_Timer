@@ -31,7 +31,7 @@ class TimeR(Timing):
 
     def __init__(self, *args, app):
         Timing.__init__(self, *args)
-        self.__app = app
+        self._app = app
         self.constants = Constants(self)
         self.TIMER_RUNNING = False
         self.NUMBERPICKERS = {}
@@ -89,6 +89,7 @@ class TimeR(Timing):
             while self.top_label_content.winfo_width() > self.master.winfo_width():
                 timer_text = timer_text[0:len(timer_text)-1]  # -1 to remove the last char
                 self.top_label_content.configure(text=timer_text)
+                self.master.update_idletasks()
 
             if len(timer_text) < original_length:
                 timer_text = timer_text[0:len(timer_text)-2]  # -2 because the 3 dots that get added are approximately 2 "normal" char wide
@@ -118,7 +119,7 @@ class TimeR(Timing):
 
         self.__handle_progress_bar_shown(hours, minutes, seconds)
         if self.HIDDEN_TIMER:
-            self.__app.withdraw()
+            self._app.withdraw()
 
 
     def __handle_progress_bar_shown(self, hours, minutes, seconds):
@@ -149,98 +150,12 @@ class TimeR(Timing):
 
         self.__handle_progress_bar_hidden()
 
-    def __make_label_fit_in_frame(self, label: ctk.CTkLabel, parent_frame: ctk.CTkFrame):
-        while not parent_frame.winfo_ismapped():
-            self.master.update_idletasks()
-
-        while not label.winfo_ismapped():
-            self.master.update_idletasks()
-
-        frame_x = parent_frame.winfo_rootx()
-        label_x = label.winfo_rootx()
-
-        padding_left = label_x - frame_x
-        max_width = parent_frame.winfo_width() - padding_left
-
-        original_text = label.cget("text")
-        paragraphs = original_text.split("\n")
-        lines = []
-
-        for paragraph in paragraphs:
-            words = paragraph.split(" ")
-            current_line = ""
-
-            for word in words:
-                if current_line:
-                    test_line = current_line + " " + word
-                else:
-                    test_line = word
-
-                test_text = "\n".join(lines + [test_line])
-
-                label.configure(text=test_text)
-                label.update_idletasks()
-
-                if label.winfo_width() <= max_width:
-                    current_line = test_line
-                    continue
-
-                if current_line:
-                    lines.append(current_line)
-                    current_line = ""
-
-                label.configure(text="\n".join(lines + [word]))
-                label.update_idletasks()
-
-                if label.winfo_width() <= max_width:
-                    current_line = word
-                    continue
-
-                remaining = word
-
-                while remaining:
-                    part = ""
-
-                    for char in remaining:
-                        test_part = part + char
-
-                        label.configure(
-                            text="\n".join(
-                                lines + [current_line + test_part + "-"]
-                            )
-                        )
-                        label.update_idletasks()
-
-                        if label.winfo_width() <= max_width:
-                            part = test_part
-                        else:
-                            break
-
-                    if not part:
-                        part = remaining[0]
-
-                    remaining = remaining[len(part):]
-
-                    if remaining:
-                        lines.append(current_line + part + "-")
-                        current_line = ""
-                    else:
-                        current_line += part
-
-            if current_line:
-                lines.append(current_line)
-
-        final_text = "\n".join(lines)
-
-        label.configure(text=final_text)
-        label.update_idletasks()
-
     def __show_hidden_accept_window(self):
-        self.utility.disable_all_buttons_from_scope(self.master)
+        self.utility.disable_all_buttons_from_scope(self._app)
         pywinstyles.set_opacity(self.master, value=0.1)
         pywinstyles.set_opacity(self.get_mode_site(), value=0.2)
 
-        self._hidden_accept_window_frame = ctk.CTkFrame(self.__app, fg_color='transparent', border_width=3, border_color=self.utility.complementaryColor(self.utility.STANDARD_BACKGROUND_COLOR))
+        self._hidden_accept_window_frame = ctk.CTkFrame(self._app, fg_color='transparent', border_width=3, border_color=self.utility.complementaryColor(self.utility.STANDARD_BACKGROUND_COLOR))
         information_header_label = ctk.CTkLabel(self._hidden_accept_window_frame, text='The "Hide Timer" checkbox is selected!', font=('Arial', 18))
         information_text_label = ctk.CTkLabel(self._hidden_accept_window_frame, justify='left', text='This will set the timer in the background and you will not be able to change or stop it again. This window will move to the foreground again, when the time is over. Only then you can modify the timer again!')
         accept_button = ctk.CTkButton(self._hidden_accept_window_frame, text="I don't need to stop/modify the timer", command=self.__accept_hidden_accept_window)
@@ -254,7 +169,7 @@ class TimeR(Timing):
         decline_button.place(relx=choice_placement, rely=0.9, anchor='center')
         self._hidden_accept_window_frame.place(relx=0.6, rely=0.5, relwidth=0.65, relheight=0.5, anchor='center')
 
-        self.__make_label_fit_in_frame(information_text_label, self._hidden_accept_window_frame)
+        self.utility.make_label_fit_in_frame(information_text_label, self._hidden_accept_window_frame)
         self.utility.set_default_button_text_color(self._hidden_accept_window_frame)
         self.utility.set_default_fg_color(self._hidden_accept_window_frame)
         self.utility.set_default_button_text_color(self._hidden_accept_window_frame)
@@ -270,7 +185,7 @@ class TimeR(Timing):
 
     def __accept_hidden_accept_window(self):
         self._hidden_accept_window_frame.destroy()
-        self.utility.enable_all_buttons_from_scope(self.master)
+        self.utility.enable_all_buttons_from_scope(self._app)
         pywinstyles.set_opacity(self.master, value=1)
         pywinstyles.set_opacity(self.get_mode_site(), value=1)
         threading.Thread(target=self.__run_timer).start()
@@ -278,7 +193,7 @@ class TimeR(Timing):
 
     def __decline_hidden_accept_window(self):
         self._hidden_accept_window_frame.destroy()
-        self.utility.enable_all_buttons_from_scope(self.master)
+        self.utility.enable_all_buttons_from_scope(self._app)
         pywinstyles.set_opacity(self.master, value=1)
         pywinstyles.set_opacity(self.get_mode_site(), value=1)
 
@@ -362,7 +277,7 @@ class TimeR(Timing):
                 time.sleep(1)
 
             if self.HIDDEN_TIMER:
-                self.__app.deiconify()
+                self._app.deiconify()
             self.__play_sound()
 
         except Exception as e:
@@ -409,7 +324,9 @@ class TimeR(Timing):
             loop_entry.configure(state=ctk.DISABLED)
         else:
             loop_entry.configure(state=ctk.NORMAL)
-            loop_entry.set(f'{self.SOUND_LOOPS}')
+            print(f'{self.SOUND_LOOPS = }')
+            amount = 3 if self.loop_var.get() == '∞' and self.SOUND_LOOPS == '∞' else self.SOUND_LOOPS
+            loop_entry.set(f'{amount}')
 
 
     def __set_volume(self, value):
@@ -462,10 +379,12 @@ class TimeR(Timing):
 
         loop_frame = ctk.CTkFrame(self.master)
         loop_label = ctk.CTkLabel(loop_frame, text='Loop Count:')
+
         loop_start_text = '∞' if self.ENDLESS_LOOP else self.SOUND_LOOPS
+        loop_start_text = 3 if self.SOUND_LOOPS == '∞' and not self.ENDLESS_LOOP else loop_start_text  # standard amount if it shouldnt be endless, but the last loop value was endless
+        self.loop_var = ctk.StringVar(value=loop_start_text)
         loop_start_state = ctk.DISABLED if self.ENDLESS_LOOP else ctk.NORMAL
-        loop_entry = ctk.CTkEntry(loop_frame, placeholder_text=f'{loop_start_text}')
-        loop_entry.set(f'{loop_start_text}')
+        loop_entry = ctk.CTkEntry(loop_frame, textvariable=self.loop_var)
         loop_entry.configure(state=loop_start_state)
         loop_label.place(relx=0, relwidth=0.4)
         loop_entry.place(relx=0.4, relwidth=0.6)
@@ -512,4 +431,5 @@ class TimeR(Timing):
         self.utility.set_default_button_text_color()
         self.utility.set_default_fg_color()
         self.utility.set_default_text_color()
+        self.utility.set_default_writable_content_color()
         self.utility.set_default_button_text_color()

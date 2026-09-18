@@ -96,6 +96,7 @@ class Stop_Watch(Timing):
 
         l1.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
         l2.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120),"units"))
+        lap_row.bind("<MouseWheel>", lambda event: self.lap_canvas.yview_scroll(int(-event.delta / 120), "units"))
 
 
     def __stopper(self, pause_button):

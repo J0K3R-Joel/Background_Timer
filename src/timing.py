@@ -10,6 +10,7 @@ class Timing():
         self.master = master
         self.TOP_LABEL_POS = TOP_LABEL_POS
         self.top_label_content = top_label_content
+        self.top_label_content.place(**self.TOP_LABEL_POS)
         self._mode_site = mode_site
         self.utility = Utility(master)
         self.path_man = PathR(self.__class__.__name__)

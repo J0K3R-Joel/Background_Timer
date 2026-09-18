@@ -40,7 +40,7 @@ def place_mode_widget(widget: ctk) -> None:
     PLACEMENT_WIDGETS.append(curr_widget_number)
 
     y_cord = MODE_START_Y + MODE_Y_INCREASER * curr_widget_number
-    widget.place(relx=0.5, rely=y_cord, anchor='center')
+    widget.place(relx=0.96/2, rely=y_cord, anchor='center')  # 0.96/2, because the mode line is drawn at 0.96 relx
 
 
 def focus_timer():
@@ -62,11 +62,9 @@ def focus_stop_watch():
 mode_site.place(relx=0, rely=0, relwidth=0.2, relheight=1)
 content_site.place(relx=0.2, rely=0, relwidth=0.8, relheight=1)
 
-border_mode_site = ctk.CTkFrame(mode_site, corner_radius=0, fg_color='#555555')
-border_mode_site.place(relx=0.96, relwidth=0.04, relheight=1)
 
-border_heading_content = ctk.CTkFrame(content_site, corner_radius=0, fg_color=utility.STANDARD_FG_COLOR)
-border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
+utility.draw_mode_line(mode_site)
+utility.draw_heading_line(scope=content_site)
 
 
 # ==================================
@@ -93,13 +91,13 @@ timing_args = (content_site,
 
 timer_site = TimeR(*timing_args, app=app)
 stop_watch_site = Stop_Watch(*timing_args)
-alarm_site = Alarm(*timing_args)
+alarm_site = Alarm(*timing_args, app=app)
 
 utility.set_default_button_text_color()
 utility.set_default_fg_color()
 utility.set_default_text_color()
 utility.set_default_button_text_color()
 
-timer_site.build()
+alarm_site.build()  # change this to the timer_site in the future
 
 app.mainloop()

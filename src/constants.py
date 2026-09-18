@@ -18,7 +18,7 @@ class Constants():
     def __handle_conf_file(self):
         conf_file = self.path_man.get_config_file_path()
         if not self.file_man.exists(conf_file):
-            self.file_man.writer(conf_file, 'w', json.dumps(self.class_.DEFAULT_CONSTANTS))
+            self.file_man.writer(conf_file, 'w', json.dumps(self.class_.DEFAULT_CONSTANTS, indent=4))
 
         text = self.file_man.reader(conf_file)
 
@@ -37,4 +37,4 @@ class Constants():
             raise KeyError('Element with key "', key, '" does not exist')
 
         self._default_dict[key] = value
-        self.file_man.writer(self.path_man.get_config_file_path(), 'w', json.dumps(self._default_dict))
+        self.file_man.writer(self.path_man.get_config_file_path(), 'w', json.dumps(self._default_dict, indent=4))
