@@ -1,7 +1,7 @@
 import json
 from fileR import FileR
 from pathR import PathR
-from messageR import MessageR
+from messagR import MessageR
 from timing import Timing
 
 class Constants():

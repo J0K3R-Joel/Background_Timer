@@ -4,7 +4,7 @@ import os, sys
 import threading
 import builtins
 import pathlib
-from messageR import MessageR
+from messagR import MessageR
 
 
 class FileR:

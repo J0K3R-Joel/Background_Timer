@@ -2,7 +2,7 @@ import time
 import threading
 import customtkinter as ctk
 import builtins
-from messageR import MessageR
+from messagR import MessageR
 from ExpandingEntry import EntryExpanding
 
 

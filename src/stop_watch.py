@@ -3,7 +3,7 @@ import time
 import customtkinter as ctk
 from timing import Timing
 from util import Utility
-from messageR import MessageR
+from messagR import MessageR
 
 class Stop_Watch(Timing):
     def __init__(self, *args):

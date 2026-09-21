@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from ExpandingEntry import EntryExpanding
 from circular_progress_bar import CircularProgressBar
 from number_pickR import NumberPicker
-from messageR import MessageR
+from messagR import MessageR
 from util import Utility
 from timing import Timing
 from constants import Constants

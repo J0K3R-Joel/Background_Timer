@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 class PathR():
     def __init__(self, mode: str = None):
@@ -42,7 +41,7 @@ class PathR():
     def __get_base_path_timer(self):
         return self.__base_path_timer
 
-    def __get_sound_path(self):
+    def get_sound_path(self):
         return self.__base_sound_path
 
     def get_config_path(self):

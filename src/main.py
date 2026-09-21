@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import pygame.mixer as mixer
-from messageR import MessageR
+from messagR import MessageR
 from util import Utility
 from timeR import TimeR
 from stop_watch import Stop_Watch
