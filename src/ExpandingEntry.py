@@ -55,8 +55,7 @@ class EntryExpanding(ctk.CTkEntry):
             self.entry_value.set(text + ' ' * (self.space_count-len(text)))
         elif len(text) == 0:
             self.reset = True
-            self.entry_value.set(' ' * self.space_count)
-            self.sizer.configure(text=' ' * self.space_count)
+            self.set(' ' * self.space_count)
         elif self.reset:
             for char in text:
                 if char == ' ':
@@ -87,8 +86,11 @@ class EntryExpanding(ctk.CTkEntry):
                     #self.__cursor_reset_in_entry()
                     self.reset = False
 
-                self.entry_value.set(text)
-                self.sizer.configure(text=text)
+                self.set(text)
+
+    def set(self, string: str):
+        self.entry_value.set(string)
+        self.sizer.configure(text=string)
 
 
     # @TODO: wenn sich das entry updaten schauen, ob es weniger als bspw 4 leerzeichen am anfang hat, wenn schon, dann füge so viele hinzu, dass es 4 sind

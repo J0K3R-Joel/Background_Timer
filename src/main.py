@@ -95,6 +95,7 @@ alarm_site = Alarm(*timing_args, app=app)
 
 utility.set_default_button_text_color()
 utility.set_default_fg_color()
+utility.set_default_hover_color()
 utility.set_default_text_color()
 utility.set_default_button_text_color()
 

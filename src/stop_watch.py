@@ -221,6 +221,7 @@ class Stop_Watch(Timing):
         self.utility.hide_all_frames()
         self.utility.set_default_button_text_color()
         self.utility.set_default_fg_color()
+        self.utility.set_default_hover_color()
         self.utility.set_default_text_color()
         self.utility.set_default_button_text_color()
 

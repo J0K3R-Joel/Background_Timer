@@ -4,7 +4,10 @@ class MessageR:
         self.default_str = f'[{self.name}]: '
 
     def __write__(self, *messages, status: str):
-        text = ''.join(messages)
+        text = ''
+        for msg in messages:
+            text += str(msg)
+        #text = ''.join(messages)
         final_message = f'> {status.upper()} - ' + self.default_str + text
         print(final_message, flush=True)  # replace this with writing in a file in the future
 

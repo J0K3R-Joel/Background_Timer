@@ -28,12 +28,13 @@ class SoundManager(ctk.CTkToplevel):
     }
 
     DEFAULT_CONSTANTS = {
-        "sound_order": {}
+        "sound_order": {},
+        "selected_sound": None
     }
 
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.withdraw()
         self.parent = parent
         self.msg = MessageR(self.__class__.__name__)
         self.path_man = PathR(self.__class__.__name__)
@@ -55,9 +56,9 @@ class SoundManager(ctk.CTkToplevel):
 
         os.makedirs(self.sound_folder, exist_ok=True)
 
+        self.callback_function = None
         self.sounds = []
         self.selected_index = -1
-        self.selected_sound = None
         self.loaded_sound = None
 
         self.current_position = 0.0
@@ -67,32 +68,39 @@ class SoundManager(ctk.CTkToplevel):
         self.is_paused = False
         self.timeline_dragging = False
         self.play_start_time = None
-
-        self.__initialize_pygame()
-        self.__create_widgets()
         self.__load_sounds()
-
-        self.__update_timeline()
-        self.after(100, self.__focus_sound_list)
+        self.__validate_selected_sound()
 
 
     def __load_saved_configs(self):
         dd = self.constants.get_default_dict()
-        self.SOUND_ORDER = dd["sound_order"]
 
+        self.SOUND_ORDER = dd["sound_order"]
+        self.selected_sound = dd["selected_sound"]
+
+
+    def __validate_selected_sound(self):
+        if self.selected_sound is not None and self.selected_sound in self.sounds:
+            self.selected_index = self.sounds.index(self.selected_sound)
+            return
+
+        if self.sounds:
+            self.selected_sound = self.sounds[0]
+            self.selected_index = 0
+            self.__change_setting("selected_sound")
+        else:
+            self.selected_sound = None
+            self.selected_index = -1
 
     def __change_setting(self, setting_name: str):
         if setting_name == "sound_order":
             new_value = self.SOUND_ORDER
+        elif setting_name == "selected_sound":
+            new_value = self.selected_sound
         else:
-            raise NotImplementedError(
-                f"{setting_name} does not exist"
-            )
+            raise NotImplementedError(f"{setting_name} does not exist")
 
-        self.constants.change_element(
-            setting_name,
-            new_value
-        )
+        self.constants.change_element(setting_name, new_value)
 
 
     def __initialize_pygame(self):
@@ -107,9 +115,6 @@ class SoundManager(ctk.CTkToplevel):
     def __create_widgets(self):
         title = ctk.CTkLabel(self, text="Sound Manager", font=ctk.CTkFont(size=24, weight="bold"))
         title.pack(pady=(20, 5))
-
-        folder_label = ctk.CTkLabel(self, text=f"Folder: {self.sound_folder}", text_color="gray")
-        folder_label.pack(pady=(0, 15))
 
         self.sound_list = ctk.CTkScrollableFrame(self, width=500, height=220)
         self.sound_list.pack(fill="both", expand=True, padx=20, pady=(0, 10))
@@ -172,18 +177,12 @@ class SoundManager(ctk.CTkToplevel):
         self.add_button.pack(fill="x", padx=20, pady=(0, 10))
 
 
-    def __get_selected_sound(self):
-        return self.selected_sound
-
-
     def __load_sounds(self):
-        self.__stop_sound()
         self.sounds = []
 
         try:
             files = os.listdir(self.sound_folder)
         except OSError as error:
-            messagebox.showerror("Error", f"Could not read the sound folder:\n\n{error}", parent=self)
             self.msg.error(f"Could not read the sound folder:\n\n{error}")
             return
 
@@ -194,15 +193,13 @@ class SoundManager(ctk.CTkToplevel):
                 continue
 
             extension = os.path.splitext(filename)[1].lower()
+
             if extension in self.SOUND_EXTENSIONS:
                 self.sounds.append(filename)
 
         self.__cleanup_sound_order()
-        self.sounds.sort(key=lambda filename: self.SOUND_ORDER.get(filename, 0), reverse=True)
 
-        self.selected_index = -1
-        self.__update_sound_list()
-        self.__reset_timeline()
+        self.sounds.sort(key=lambda filename: self.SOUND_ORDER.get(filename, 0), reverse=True)
 
 
     def __update_sound_list(self):
@@ -213,6 +210,7 @@ class SoundManager(ctk.CTkToplevel):
             empty_label = ctk.CTkLabel(self.sound_list, text="No sounds available.", font=ctk.CTkFont(size=16), text_color="gray")
             empty_label.pack(expand=True, pady=80)
             self.status_label.configure(text="No sounds available.")
+            self.selected_sound = None
             return
 
         self.status_label.configure(text=f"{len(self.sounds)} sound(s) available")
@@ -267,14 +265,10 @@ class SoundManager(ctk.CTkToplevel):
             return "break"
 
         self.selected_sound = self.sounds[self.selected_index]
+        self.__change_setting("selected_sound")
 
-        print(f"Selected sound: {self.selected_sound}")
-
-        self.__stop_sound()
-        self.parent.sound_manager = None
-        self.destroy()
         self.msg.info(f'Selected sound: "{self.selected_sound}"')
-
+        self.__close_window()
         return "break"
 
 
@@ -391,7 +385,6 @@ class SoundManager(ctk.CTkToplevel):
                 self.msg.info(f'Running sound stopped: "{filename}"')
                 return "break"
 
-            # Load and start a new sound.
             pygame.mixer.music.stop()
             pygame.mixer.music.unload()
             pygame.mixer.music.load(path)
@@ -424,7 +417,7 @@ class SoundManager(ctk.CTkToplevel):
             self.current_time_label.configure(text=self.__format_time(start_position))
             self.play_button.configure(text="⏸ Pause")
             self.status_label.configure(text=f"▶ Playing: {filename}")
-            self.msg.info(f'New sound playing: "{filename}"')
+            self.msg.info(f'Playing sound: "{filename}"')
         except pygame.error as error:
             self.loaded_sound = None
             self.is_paused = False
@@ -470,7 +463,7 @@ class SoundManager(ctk.CTkToplevel):
                 position = self.current_position + elapsed
 
                 if self.sound_duration > 0 and position >= self.sound_duration:
-                    position = self.sound_duration
+                    position = 0.0
                     self.timeline.set(position)
                     self.current_time_label.configure(text=self.__format_time(position))
                     self.current_position = position
@@ -597,6 +590,7 @@ class SoundManager(ctk.CTkToplevel):
 
         except pygame.error as error:
             self.status_label.configure(text=f"Seek error: {error}")
+            self.msg.error(f"Seek error: {error}")
 
 
     @staticmethod
@@ -672,13 +666,16 @@ class SoundManager(ctk.CTkToplevel):
         self.__change_setting("sound_order")
 
         self.__load_sounds()
+        self.__update_sound_list()
 
-        if filename in self.sounds:
-            index = self.sounds.index(filename)
-            self.__select_sound(index)
+        self.sounds.append(filename)
+        index = self.sounds.index(filename)
+        self.__select_sound(index)
+        self.selected_sound = filename
+        self.__change_setting('selected_sound')
 
         self.status_label.configure(text=f"Added: {filename}")
-        self.msg.info(f'Added sound: "{filename}"')
+        self.msg.info(f'Added sound: {filename}')
 
 
     def __delete_selected(self):
@@ -724,10 +721,17 @@ class SoundManager(ctk.CTkToplevel):
         self.__change_setting("sound_order")
 
         old_index = self.selected_index
+
         self.__load_sounds()
+
         if self.sounds:
             new_index = min(old_index, len(self.sounds) - 1)
+            self.selected_index = -1
+            self.__update_sound_list()
             self.__select_sound(new_index)
+        else:
+            self.selected_index = -1
+            self.__update_sound_list()
 
         self.status_label.configure(text=f"Deleted: {filename}")
         self.msg.info(f'Deleted sound: "{filename}"')
@@ -752,6 +756,29 @@ class SoundManager(ctk.CTkToplevel):
         self.__stop_sound()
         self.parent.sound_manager = None
         self.destroy()
+        if self.callback_function:
+            self.callback_function()
+
+    def start(self, callback_function):
+        self.callback_function = callback_function
+        self.__initialize_pygame()
+        self.__create_widgets()
+        self.__update_sound_list()
+
+        if self.selected_sound is not None:
+            self.__load_duration(self.selected_sound)
+            self.timeline.set(0)
+
+        self.__update_timeline()
+        self.after(100, self.__focus_sound_list)
+
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+
+
+    def get_selected_sound(self):
+        return self.selected_sound
 
 
 class App(ctk.CTk):
@@ -779,6 +806,8 @@ class App(ctk.CTk):
                 pass
 
         self.sound_manager = SoundManager(self)
+        print(self.sound_manager.get_selected_sound())
+        self.sound_manager.start()
 
 
 if __name__ == "__main__":
