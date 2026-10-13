@@ -1,16 +1,15 @@
 import os
 import shutil
 import time
-
 import pygame
 import customtkinter as ctk
-
 from tkinter import filedialog, messagebox
 from mutagen import File as MutagenFile
 from messagR import MessageR
 from pathR import PathR
 from fileR import FileR
 from constants import Constants
+from util import Utility
 
 
 class SoundManager(ctk.CTkToplevel):
@@ -41,6 +40,7 @@ class SoundManager(ctk.CTkToplevel):
         self.file_man = FileR(self.path_man.get_config_path())
         self.sound_folder = self.path_man.get_sound_path()
         self.constants = Constants(self)
+        self.utility = Utility(self.parent)
 
         self.sound_config_file = self.path_man.get_config_file_path()
 
@@ -115,6 +115,8 @@ class SoundManager(ctk.CTkToplevel):
     def __create_widgets(self):
         title = ctk.CTkLabel(self, text="Sound Manager", font=ctk.CTkFont(size=24, weight="bold"))
         title.pack(pady=(20, 5))
+        rev_fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
+        rev_text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
 
         self.sound_list = ctk.CTkScrollableFrame(self, width=500, height=220)
         self.sound_list.pack(fill="both", expand=True, padx=20, pady=(0, 10))
@@ -167,7 +169,7 @@ class SoundManager(ctk.CTkToplevel):
         self.stop_button = ctk.CTkButton(playback_frame, text="■ Stop", command=self.__stop_sound)
         self.stop_button.pack(side="left", expand=True, fill="x", padx=5, pady=10)
 
-        self.delete_button = ctk.CTkButton(playback_frame, text="🗑 Delete", fg_color="#a83232", hover_color="#c43c3c", command=self.__delete_selected)
+        self.delete_button = ctk.CTkButton(playback_frame, text="🗑 Delete", fg_color=rev_fg_color, text_color=rev_text_color, command=self.__delete_selected)
         self.delete_button.pack(side="left", expand=True, fill="x", padx=(5, 10), pady=10)
 
         self.confirm_button = ctk.CTkButton(self, text="✓ Confirm Selection", height=40, command=self.__confirm_selection)
@@ -207,7 +209,7 @@ class SoundManager(ctk.CTkToplevel):
             widget.destroy()
 
         if not self.sounds:
-            empty_label = ctk.CTkLabel(self.sound_list, text="No sounds available.", font=ctk.CTkFont(size=16), text_color="gray")
+            empty_label = ctk.CTkLabel(self.sound_list, text="No sounds available.", font=ctk.CTkFont(size=16))
             empty_label.pack(expand=True, pady=80)
             self.status_label.configure(text="No sounds available.")
             self.selected_sound = None
@@ -215,9 +217,11 @@ class SoundManager(ctk.CTkToplevel):
 
         self.status_label.configure(text=f"{len(self.sounds)} sound(s) available")
         for index, filename in enumerate(self.sounds):
-            fg_color = ("gray70", "gray30") if index == self.selected_index else "transparent"
+            fg_color = self.utility.STANDARD_FG_COLOR if index == self.selected_index else self.utility.STANDARD_BACKGROUND_COLOR
+            text_color = self.utility.STANDARD_BUTTON_TEXT_COLOR if index == self.selected_index else self.utility.STANDARD_TEXT_COLOR
+            hover_color = self.utility.adjust_color(fg_color, 40)
 
-            button = ctk.CTkButton(self.sound_list, text=filename, anchor="w", fg_color=fg_color, hover_color=("gray75", "gray25"), text_color=("black", "white"), command=lambda i=index: self.__select_sound(i),)
+            button = ctk.CTkButton(self.sound_list, text=filename, anchor="w", fg_color=fg_color, text_color=text_color, hover_color=hover_color, command=lambda i=index: self.__select_sound(i),)
             button.pack(fill="x", padx=5, pady=2)
 
             button.bind("<Double-Button-1>", lambda event, i=index: self.__confirm_sound(i))
@@ -277,10 +281,10 @@ class SoundManager(ctk.CTkToplevel):
 
         for index, widget in enumerate(children):
             if index == self.selected_index:
-                widget.configure(fg_color=("gray70", "gray30"))
+                widget.configure(fg_color=self.utility.STANDARD_FG_COLOR)
             else:
-                widget.configure(fg_color="transparent")
-
+                widget.configure(fg_color=self.utility.STANDARD_BACKGROUND_COLOR)
+        self.utility.set_default_hover_color(self.sound_list)
 
     def __focus_sound_list(self):
         self.focus_set()
@@ -759,10 +763,18 @@ class SoundManager(ctk.CTkToplevel):
         if self.callback_function:
             self.callback_function()
 
+    def __setup(self):
+        #self.utility.hide_all_frames()
+        self.utility.set_default_fg_color()
+        self.utility.set_default_hover_color()
+        self.utility.set_default_text_color()
+        self.utility.set_default_button_text_color()
+
     def start(self, callback_function):
         self.callback_function = callback_function
         self.__initialize_pygame()
         self.__create_widgets()
+        self.__setup()
         self.__update_sound_list()
 
         if self.selected_sound is not None:
@@ -807,7 +819,7 @@ class App(ctk.CTk):
 
         self.sound_manager = SoundManager(self)
         print(self.sound_manager.get_selected_sound())
-        self.sound_manager.start()
+        self.sound_manager.start(print)
 
 
 if __name__ == "__main__":

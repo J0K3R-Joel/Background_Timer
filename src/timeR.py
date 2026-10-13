@@ -120,6 +120,7 @@ class TimeR(Timing):
         self.__handle_progress_bar_shown(hours, minutes, seconds)
         if self.HIDDEN_TIMER:
             self._app.withdraw()
+        self.utility.set_default_hover_color()
 
 
     def __handle_progress_bar_shown(self, hours, minutes, seconds):
@@ -149,6 +150,8 @@ class TimeR(Timing):
         self.future_time_label.configure(text='')
 
         self.__handle_progress_bar_hidden()
+        self.utility.set_default_hover_color()
+
 
     def __show_hidden_accept_window(self):
         self.utility.disable_all_buttons_from_scope(self._app)
@@ -180,6 +183,7 @@ class TimeR(Timing):
         fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
         text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
         decline_button.configure(fg_color=fg_color, text_color=text_color)
+        self.utility.set_default_hover_color(self._hidden_accept_window_frame)
 
 
 
@@ -324,7 +328,6 @@ class TimeR(Timing):
             loop_entry.configure(state=ctk.DISABLED)
         else:
             loop_entry.configure(state=ctk.NORMAL)
-            print(f'{self.SOUND_LOOPS = }')
             amount = 3 if self.loop_var.get() == '∞' and self.SOUND_LOOPS == '∞' else self.SOUND_LOOPS
             loop_entry.set(f'{amount}')
 

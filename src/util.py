@@ -10,7 +10,7 @@ from ExpandingEntry import EntryExpanding
 class Utility():
     def __init__(self, master):
         self.master = master
-        self.STANDARD_FG_COLOR = '#1F6AA5'
+        self.STANDARD_FG_COLOR = '#FF0000'
         self.STANDARD_HOVER_COLOR = self.adjust_color(self.STANDARD_FG_COLOR, 50)
         self.STANDARD_TEXT_COLOR = '#FFFFFF'
         self.STANDARD_BUTTON_TEXT_COLOR = '#FFFFFF'
@@ -19,7 +19,6 @@ class Utility():
         self.STANDARD_WRITABLE_CONTENT_COLOR = '#343638'
         self.STANDARD_ORDERED_FRAME_COLOR = '#353535'
         self.STANDARD_ORDERED_FRAME_BORDER_COLOR = '#686868'
-        #@TODO fix hovering above buttons
         self.ENTRY_WIDGETS = {}
         self.msg = MessageR('Utility')
 
@@ -50,6 +49,7 @@ class Utility():
                 if not isinstance(widget.cget('fg_color'), str) or widget.cget('fg_color')[0] != '#':
                     widget.configure(fg_color='transparent')
 
+
     def set_default_fg_color(self, scope = None):
         scope = self.master if not scope else scope
         widgets = self.get_widgets_from_scope([], scope.winfo_children())
@@ -72,31 +72,35 @@ class Utility():
     def set_default_hover_color(self, scope = None):
         scope = self.master if not scope else scope
         widgets = self.get_widgets_from_scope([], scope.winfo_children())
+        hoverable_widgets = [
+            ctk.CTkButton,
+            ctk.CTkCheckBox,
+        ]
 
         for widget in widgets:
-            if isinstance(widget, ctk.CTkButton):
-                color = widget.cget('fg_color')
-                widget.configure(hover_color=self.adjust_color(color, 40))
+            for hoverable in hoverable_widgets:
+                if isinstance(widget, hoverable):
+                    color = widget.cget('fg_color')
 
+                    if isinstance(color, list):
+                        self.msg.warning(f'{widget} with {color = }')
+                    widget.configure(hover_color=self.adjust_color(color, 40))
 
+            if isinstance(widget, ctk.CTkSlider):
+                color = widget.cget('progress_color')
 
-    def set_default_text_color_TEST(self, exclude_buttons: bool = False, scope = None):
-        scope = self.master if not scope else scope
-        widgets = self.get_widgets_from_scope([], scope.winfo_children())
+                if isinstance(color, list):
+                    self.msg.warning(f'{widget} with {color = }')
+                widget.configure(button_hover_color=self.adjust_color(color, 40))
 
-        if exclude_buttons:
-            for widget in widgets:
-                if not isinstance(widget, ctk.CTkButton):
-                    try:
-                        widget.configure(text_color=self.STANDARD_TEXT_COLOR)
-                    except Exception as e:
-                        continue
-        else:
-            for widget in widgets:
-                try:
-                    widget.configure(text_color=self.STANDARD_TEXT_COLOR)
-                except Exception as e:
-                    continue
+            if isinstance(widget, ctk.CTkScrollbar):
+                color = widget.cget('button_color')
+
+                if isinstance(color, list):
+                    self.msg.warning(f'{widget} with {color = }')
+
+                widget.configure(button_hover_color=self.adjust_color(color, 40))
+
 
     def set_default_text_color(self, exclude_scope = None, scope = None):
         scope = self.master if not scope else scope
@@ -159,10 +163,10 @@ class Utility():
 
         if reference is not None:
             if not reference.startswith("#") or len(reference) != 7:
-                raise ValueError("Reference color has to be a hexadecimal color")
+                raise ValueError('Reference color has to be a hexadecimal color')
 
-        if percent < 0:
-            raise ValueError("Percentage cannot be negative")
+        if percent < 0 or percent > 100:
+            raise ValueError('Percentage has to be between 0 and 100')
 
         def hex_to_hsl(hex_color):
             r = int(hex_color[1:3], 16) / 255
@@ -173,37 +177,36 @@ class Utility():
             return h, s, l
 
         def hsl_to_hex(h, s, l):
-            r, g, b = colorsys.hls_to_rgb(h, l, s)
+            r, g, b = colorsys.hls_to_rgb(h % 1.0, l, s)
 
-            return "#{:02X}{:02X}{:02X}".format(
+            return '#{:02X}{:02X}{:02X}'.format(
                 round(r * 255),
                 round(g * 255),
                 round(b * 255)
             )
 
         h, s, l = hex_to_hsl(color)
-
         if reference is None:
-            direction = -1
-        else:
-            _, _, reference_l = hex_to_hsl(reference)
-
-            if reference_l > l:
-                direction = -1
-            elif reference_l < l:
-                direction = 1
-            else:
-                direction = -1
-
-        if direction < 0:
             l -= l * (percent / 100)
-            if l <= 0:
-                l = min(1, abs(percent) / 100)
 
-        else:
-            l += (1 - l) * (percent / 100)
-            if l >= 1:
-                l = max(0, 1 - (percent / 100))
+            if l <= 0:
+                l = min(1, percent / 100)
+
+            return hsl_to_hex(h, s, l)
+
+        reference_h, reference_s, reference_l = hex_to_hsl(reference)
+        factor = percent / 100
+        hue_difference = reference_h - h
+
+        if hue_difference > 0.5:
+            hue_difference -= 1.0
+        elif hue_difference < -0.5:
+            hue_difference += 1.0
+
+        h += hue_difference * factor
+
+        s += (reference_s - s) * factor
+        l += (reference_l - l) * factor
 
         return hsl_to_hex(h, s, l)
 

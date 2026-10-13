@@ -1,5 +1,4 @@
 import time
-
 import customtkinter as ctk
 from timing import Timing
 from util import Utility
@@ -37,6 +36,7 @@ class Stop_Watch(Timing):
         center_line.place(relx=0, rely=0.53, relwidth=1, relheight=0.01)
         lap_label.place(relx=0.02, rely=0.55)
         self.lap_frame.place(relx=0.02, rely=0.62, relwidth=0.96, relheight=0.34)
+        self.utility.set_default_hover_color()
 
 
     def __watch_mode_inactive(self, start_button, pause_button, rounding_button, *removable_widgets):
@@ -45,13 +45,15 @@ class Stop_Watch(Timing):
 
         self.stopped = True
         self.paused = False
-        self.utility.clear_scope(self.lap_placeable_frame)
+        if self.lap_placeable_frame.winfo_children():
+            self.utility.clear_scope(self.lap_placeable_frame)
         self.lap_frame.place_forget()
         self.lap_scroll_bar.place_forget()
         pause_button.place_forget()
         rounding_button.place_forget()
         for widget in removable_widgets:
             widget.destroy()
+        self.utility.set_default_hover_color()
 
 
     def __pause_stopwatch(self):
@@ -143,8 +145,6 @@ class Stop_Watch(Timing):
             kwargs.pop('width')
             kwargs.pop('height')
             self.hours_time_label.place(**kwargs)
-
-
 
         self.hours_time_label.configure(text=f"{hours:02d}")
         self.minutes_time_label.configure(text=f"{minutes:02d}")

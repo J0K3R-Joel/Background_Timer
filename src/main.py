@@ -5,9 +5,28 @@ from util import Utility
 from timeR import TimeR
 from stop_watch import Stop_Watch
 from alarm import Alarm
+import socket
+import threading
+
+INSTANCE_HOST = '127.0.0.1'
+INSTANCE_PORT = 47821
+
+def try_show_existing_instance():
+    try:
+        with socket.create_connection((INSTANCE_HOST, INSTANCE_PORT), timeout=0.2) as connection:
+            connection.sendall(b'SHOW')
+
+        return True
+    except (ConnectionRefusedError, OSError):
+        return False
+
+
+if try_show_existing_instance():
+    raise SystemExit
 
 app = ctk.CTk()
 app.geometry('800x400')
+app.title('Background Timer')
 mode_site = ctk.CTkFrame(app)
 content_site = ctk.CTkFrame(app)
 
@@ -24,6 +43,38 @@ mixer.music.load('.\\media\\Ringtone.mp3')
 MODE_START_Y = 0.25
 MODE_Y_INCREASER = 0.1
 PLACEMENT_WIDGETS = []
+
+def start_instance_server(app):
+    def server():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind((INSTANCE_HOST, INSTANCE_PORT))
+            server_socket.listen(1)
+
+            while True:
+                connection, _ = server_socket.accept()
+                with connection:
+                    command = connection.recv(32).decode('utf-8')
+
+                if command == 'SHOW':
+                    app.after(0, show_existing_instance)
+
+    threading.Thread(target=server, daemon=True).start()
+
+
+def show_existing_instance():
+    app.deiconify()
+    app.lift()
+    app.focus_force()
+
+
+def close_application():
+    if alarm_site.ALARM_RUNNING:
+        app.withdraw()
+        return
+
+    app.destroy()
+
 
 def clear_page() -> ctk.CTkLabel:
     global top_label_content
@@ -67,6 +118,7 @@ utility.draw_mode_line(mode_site)
 utility.draw_heading_line(scope=content_site)
 
 
+
 # ==================================
 # ============= MODE ===============
 # ================================== 
@@ -101,4 +153,5 @@ utility.set_default_button_text_color()
 
 alarm_site.build()  # change this to the timer_site in the future
 
+app.protocol("WM_DELETE_WINDOW", close_application)
 app.mainloop()
