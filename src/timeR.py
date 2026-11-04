@@ -85,25 +85,23 @@ class TimeR(Timing):
         timer_entry.place_forget()
         self.top_label_content.configure(text=timer_text)
         self.top_label_content.place(**self.TOP_LABEL_POS)
+        self.master.update_idletasks()
+
         if self.top_label_content.winfo_width() > self.master.winfo_width():
             last_half_text = timer_text[len(timer_text) // 2:]
             space_index = last_half_text.find(' ')
+
             if space_index != -1:
                 last_half_text = last_half_text[0:space_index] + '\n' + last_half_text[space_index:]
                 timer_text = timer_text[0:len(timer_text) // 2] + last_half_text
                 self.top_label_content.configure(text=timer_text)
-            original_length = len(timer_text)
 
             while self.top_label_content.winfo_width() > self.master.winfo_width():
                 timer_text = timer_text[0:len(timer_text)-1]  # -1 to remove the last char
-                self.top_label_content.configure(text=timer_text)
+                self.top_label_content.configure(text=timer_text + '...')
                 self.master.update_idletasks()
 
-            if len(timer_text) < original_length:
-                timer_text = timer_text[0:len(timer_text)-2]  # -2 because the 3 dots that get added are approximately 2 "normal" char wide
-                timer_text += '...'
 
-        self.top_label_content.configure(text=timer_text)
 
         hours = self.NUMBERPICKERS['hour']
         minutes = self.NUMBERPICKERS['minute']
@@ -208,6 +206,7 @@ class TimeR(Timing):
         self.utility.enable_all_buttons_from_scope(self._app)
         pywinstyles.set_opacity(self.master, value=1)
         pywinstyles.set_opacity(self.get_mode_site(), value=1)
+
 
     def __check_valid_timer(self) -> bool:
         loops = self.utility.handle_entry_name_return('loop', 'int', 'invalid', '∞')
