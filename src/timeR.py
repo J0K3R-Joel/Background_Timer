@@ -444,6 +444,7 @@ class TimeR(Timing):
         self.utility.make_label_fit_in_frame(self.selected_volume_variable_label, self.volume_frame, truncate=True)
         self.utility.set_default_fg_color()
         self.utility.set_default_hover_color()
+        self.overtime_sign_label.configure(text_color=self.utility.STANDARD_FG_COLOR)
 
 
     def __open_sound_manager(self):
