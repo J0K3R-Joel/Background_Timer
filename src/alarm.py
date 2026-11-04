@@ -17,6 +17,7 @@ class Alarm(Timing):
     DEFAULT_NAMES = {
         'time': 'todays_time',
         'name': 'alarm_name',
+        's_name': 'shortened_alarm_name',
         'desc': 'description',
         'sound': 'alarm_sound',
         'loop': 'loop_count',
@@ -29,6 +30,7 @@ class Alarm(Timing):
     DEFAULT_CONSTANTS = {
         DEFAULT_NAMES['time']: list(),
         DEFAULT_NAMES['name']: list(),
+        DEFAULT_NAMES['s_name']: list(),
         DEFAULT_NAMES['desc']: list(),
         DEFAULT_NAMES['sound']: list(),
         DEFAULT_NAMES['loop']: list(),
@@ -46,6 +48,7 @@ class Alarm(Timing):
         self.utility = Utility(self.master)
         self.sound_man = SoundManager(self.master)
         self.selected_sound = self.sound_man.get_selected_sound()
+        self.invalid_sound_exists = False
         self.alarms_created = True
         self.editing_alarm_index = None
         self.ALARM_RUNNING = False
@@ -57,6 +60,7 @@ class Alarm(Timing):
         self._alarm_channels = {}
         self._alarm_sounds = {}
         self._last_alarm_check = None
+        self._alarm_check_after_id = None
         self._window_hidden_by_alarm = False
         self._foreground_alarms_pending_disable = set()
         self.__load_config_files()
@@ -66,6 +70,7 @@ class Alarm(Timing):
         dd = self.constants.get_default_dict()
         self.TIME_LIST: list = dd[self.DEFAULT_NAMES['time']]
         self.NAME_LIST = dd[self.DEFAULT_NAMES['name']]
+        self.SHORTENED_NAME_LIST = dd[self.DEFAULT_NAMES['s_name']]
         self.DESC_LIST = dd[self.DEFAULT_NAMES['desc']]
         self.SOUND_LIST = dd[self.DEFAULT_NAMES['sound']]
         self.LOOP_LIST = dd[self.DEFAULT_NAMES['loop']]
@@ -81,6 +86,7 @@ class Alarm(Timing):
     def __reset_all_default_lists(self):
         self.TIME_LIST = list()
         self.NAME_LIST = list()
+        self.SHORTENED_NAME_LIST = list()
         self.DESC_LIST = list()
         self.SOUND_LIST = list()
         self.LOOP_LIST = list()
@@ -94,6 +100,7 @@ class Alarm(Timing):
         self.alarms_created = False
         self.TIME_LIST.append('12:00')
         self.NAME_LIST.append('Alarm')
+        self.SHORTENED_NAME_LIST.append(self.NAME_LIST[0])
         self.DESC_LIST.append('Description for the Alarm')
         self.SOUND_LIST.append(None)
         self.LOOP_LIST.append(3)
@@ -122,8 +129,13 @@ class Alarm(Timing):
             self.utility.show_warning_text(f'The name can only have {max_name_len} chars. Currently: {len(name)}', 5)
             return False
 
+        if not self.sound_man.sound_exists(self.selected_sound):
+            self.utility.show_warning_text(f'The song {self.selected_sound} does not exist anymore. Add a new one!', 4)
+            return False
+
         self.TIME_LIST.append(time_str)
         self.NAME_LIST.append(name)
+        self.SHORTENED_NAME_LIST.append(name)
         self.DESC_LIST.append(description)
         self.SOUND_LIST.append(self.selected_sound)
         self.LOOP_LIST.append(loops)
@@ -138,7 +150,6 @@ class Alarm(Timing):
             self.__refresh_running_alarm()
 
         self.msg.info(f'Created: {time_str= } | {name= } | {description= } | {self.selected_sound= } | {loops= } | {self.volume_var.get()= } | {self.hidden_var.get()= } | {self.endless_var.get()= } | {self.enabled_var.get()= }')
-
         return True
 
 
@@ -161,8 +172,13 @@ class Alarm(Timing):
             self.utility.show_warning_text(f'The name can only have {max_name_len} chars. Currently: {len(name)}', 4)
             return False
 
+        if not self.sound_man.sound_exists(self.selected_sound):
+            self.utility.show_warning_text(f'The song {self.selected_sound} does not exist anymore. Add a new one!', 4)
+            return False
+
         self.TIME_LIST[index] = time_str
         self.NAME_LIST[index] = name
+        self.SHORTENED_NAME_LIST[index] = name
         self.DESC_LIST[index] = description
         self.SOUND_LIST[index] = self.selected_sound
         self.LOOP_LIST[index] = loops
@@ -190,6 +206,8 @@ class Alarm(Timing):
             new_value = self.TIME_LIST
         elif setting_name == self.DEFAULT_NAMES.get('name'):
             new_value = self.NAME_LIST
+        elif setting_name == self.DEFAULT_NAMES.get('s_name'):
+            new_value = self.SHORTENED_NAME_LIST
         elif setting_name == self.DEFAULT_NAMES.get('desc'):
             new_value = self.DESC_LIST
         elif setting_name == self.DEFAULT_NAMES.get('sound'):
@@ -231,22 +249,28 @@ class Alarm(Timing):
         self.sound_man.start(self.__close_sound_manager)
 
 
-    def __close_sound_manager(self):
-        self.utility.enable_all_buttons_from_scope(self._app)
-        pywinstyles.set_opacity(self.master, value=1)
-        pywinstyles.set_opacity(self.get_mode_site(), value=1)
-
-        self.selected_sound = self.sound_man.get_selected_sound()
+    def __set_sound_states(self, sound = None):
+        self.selected_sound = sound if sound else self.sound_man.get_selected_sound()
         font_style = ctk.CTkFont(weight=None) if self.selected_sound else ctk.CTkFont(weight='bold')
-        selected_text = f'> {self.selected_sound}' if self.selected_sound else f'{self.selected_sound}, select one first!'
+        selected_text = f'> {self.selected_sound}' if self.selected_sound else f'None, select one first!'
         fg_color = self.utility.STANDARD_FG_COLOR if self.selected_sound else self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
         text_color = self.utility.STANDARD_BUTTON_TEXT_COLOR if self.selected_sound else self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
-        remove_fg_color = self.utility.adjust_color(self.cancel_button.cget('fg_color'), 50, self.utility.STANDARD_FG_COLOR)
-        remove_text_color = self.utility.complementaryColor(remove_fg_color)
 
         self.selected_volume_variable_label.configure(text=selected_text, font=font_style)
         self.sound_button.configure(fg_color=fg_color, text_color=text_color)
         self.utility.make_label_fit_in_frame(self.selected_volume_variable_label, self.volume_frame, truncate=True)
+        self.utility.set_default_hover_color(self.clock_volume_frame)
+
+
+
+    def __close_sound_manager(self):
+        self.utility.enable_all_buttons_from_scope(self._app)
+        pywinstyles.set_opacity(self.master, value=1)
+        pywinstyles.set_opacity(self.get_mode_site(), value=1)
+        remove_fg_color = self.utility.adjust_color(self.cancel_button.cget('fg_color'), 50, self.utility.STANDARD_FG_COLOR)
+        remove_text_color = self.utility.complementaryColor(remove_fg_color)
+
+        self.__set_sound_states()
         self.utility.set_default_fg_color()
         self.delete_button.configure(fg_color=remove_fg_color, text_color=remove_text_color, hover_color=self.utility.adjust_color(remove_fg_color, 50))
 
@@ -497,6 +521,7 @@ class Alarm(Timing):
         else:
             self.delete_button.place_forget()
 
+
         self.new_alarm_window.place(relx=0.5, rely=0.5, relwidth=0.95, relheight=0.75, anchor='center')
         self.utility.make_label_fit_in_frame(self.selected_volume_variable_label, self.volume_frame, truncate=True)
 
@@ -538,7 +563,7 @@ class Alarm(Timing):
                     hour = hour % 12 or 12
                     child.configure(text=f'{hour}:{minute:02d} {period}')
                 elif text.find('🔔 Rung') != -1:
-                    child.configure(text=self.NAME_LIST[index])
+                    child.configure(text=self.SHORTENED_NAME_LIST[index])
                 child.configure(text_color=text_color)
 
             if isinstance(child, ctk.CTkFrame):
@@ -583,6 +608,7 @@ class Alarm(Timing):
         alarm = [
             self.TIME_LIST[index],
             self.NAME_LIST[index],
+            self.SHORTENED_NAME_LIST[index],
             self.DESC_LIST[index],
             self.SOUND_LIST[index],
             self.LOOP_LIST[index],
@@ -592,7 +618,7 @@ class Alarm(Timing):
             self.ENABLED_LIST[index]
         ]
 
-        time, name, description, sound, loops, volume, hidden, endless, enabled = alarm
+        time, name, s_name, description, sound, loops, volume, hidden, endless, enabled = alarm
         hour, minute = time.split(':')
 
         self.hour_picker.set(int(hour))
@@ -614,6 +640,7 @@ class Alarm(Timing):
         self.save_button.configure(text='✔ Save Changes')
 
         self.__create_alarm_window()
+        self.__set_sound_states(sound)
 
 
     def __create_new_alarm(self):
@@ -632,6 +659,34 @@ class Alarm(Timing):
     def __time_to_minutes(self, time_string):
         hour, minute = map(int, time_string.split(':'))
         return hour * 60 + minute
+
+    def __get_enabled_alarms(self):
+        now = datetime.now()
+        candidates = []
+
+        for index, time_string in enumerate(self.TIME_LIST):
+            if not bool(self.ENABLED_LIST[index]):
+                continue
+
+            hour, minute = map(int, time_string.split(':'))
+            alarm_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+            if alarm_time <= now:
+                alarm_time += timedelta(days=1)
+
+            candidates.append({
+                'index': index,
+                'datetime': alarm_time,
+                'time': time_string,
+                'hidden': bool(self.HIDDEN_LIST[index]),
+                'name': self.NAME_LIST[index],
+                'sound': self.SOUND_LIST[index],
+                'loops': self.LOOP_LIST[index],
+                'volume': self.VOLUME_LIST[index],
+                'endless': bool(self.ENDLESS_LIST[index])
+            })
+
+        return candidates
 
 
     def __get_next_enabled_alarm(self):
@@ -677,7 +732,6 @@ class Alarm(Timing):
 
         return f'{seconds}s'
 
-
     def __update_window_state(self):
         if not self.ALARM_RUNNING:
             return
@@ -685,24 +739,21 @@ class Alarm(Timing):
         next_alarm = self.__get_next_enabled_alarm()
 
         if self._foreground_alarms_pending_disable:
-            print('0')
-            self._app.deiconify()
-            self._window_hidden_by_alarm = False
-            return
+            should_hide = False
 
-        if next_alarm is None:
-            print('1')
-            self._app.deiconify()
-            self._window_hidden_by_alarm = False
-            return
-
-        if next_alarm['hidden']:
-            print('2')
-            self._app.withdraw()
-            self._window_hidden_by_alarm = True
+        elif next_alarm is None:
+            should_hide = False
 
         else:
-            print('3')
+            should_hide = bool(next_alarm['hidden'])
+
+        if should_hide == self._window_hidden_by_alarm:
+            return
+
+        if should_hide:
+            self._app.withdraw()
+            self._window_hidden_by_alarm = True
+        else:
             self._app.deiconify()
             self._window_hidden_by_alarm = False
 
@@ -745,6 +796,22 @@ class Alarm(Timing):
         self.__update_next_alarm_label()
 
 
+    def __check_valid_sounds(self):
+        if not self.ALARM_RUNNING:
+            return
+
+        for alarm in self.__get_enabled_alarms():
+            if not self.sound_man.sound_exists(alarm['sound']):
+                self._window_hidden_by_alarm = False
+                self._app.deiconify()
+                self.__stop_alarm()
+                text = f'There is an alarm with an invalid sound! Change it.'
+                self.msg.bad(text)
+                self.utility.show_warning_text(text, 3)
+
+        self.master.after(500, self.__check_valid_sounds)
+
+
     def __start_alarm(self):
         if self.ALARM_RUNNING:
             self.__stop_alarm()
@@ -752,9 +819,17 @@ class Alarm(Timing):
 
         self.__change_all_settings()
         next_alarm = self.__get_next_enabled_alarm()
+        text = ''
 
         if next_alarm is None:
-            self.msg.info('No enabled alarms.')
+            text = 'No enabled alarms.'
+
+        if self.invalid_sound_exists:
+            text = 'There is an alarm with an invalid sound! Change it before starting.'
+
+        if text:
+            self.msg.bad(text)
+            self.utility.show_warning_text(text, 3)
             return
 
         self.ALARM_RUNNING = True
@@ -764,6 +839,7 @@ class Alarm(Timing):
         self.__change_on_alarm()
         self.__update_window_state()
         self.__update_next_alarm_label()
+        self.__check_valid_sounds()
         self._alarm_check_after_id = self.master.after(0, self.__check_running_alarm)
 
         self.msg.info(f"Alarm system started. Next alarm: {next_alarm['datetime']}")
@@ -803,8 +879,8 @@ class Alarm(Timing):
         self._app.deiconify()
         if self._start_button is not None:
             self._start_button.configure(text='Start', fg_color=self.utility.STANDARD_FG_COLOR, hover_color=self.utility.adjust_color(self.utility.STANDARD_FG_COLOR, 40), command=self.__start_alarm)
-        self.utility.clear_visible_widgets(scope=self.list_placeable_frame)
-        self.__create_alarm_list()
+        self.utility.clear_scope(scope=self.list_placeable_frame)
+        self.__create_alarm_list(None)
         self.__update_next_alarm_label()
         self.msg.info('Alarm system stopped.')
 
@@ -848,10 +924,13 @@ class Alarm(Timing):
             self.msg.info(f"Could not play alarm sound: {error}")
 
 
-    def __fit_alarm_names(self, name_label, time_label, enabled_frame):
+    def __fit_alarm_names(self, index, name_label, time_label, enabled_frame, rung_text):
         self.master.update_idletasks()
 
         name_str: str = name_label.cget('text')
+        name_str = name_str[0:len(name_str)-len(rung_text)]
+        original_name = name_str
+
         try:
             distance = name_label.winfo_x() - time_label.winfo_x() - time_label.winfo_width()
 
@@ -860,16 +939,21 @@ class Alarm(Timing):
                     break
 
                 name_str = name_str[0:len(name_str) - 1]
-                name_label.configure(text=name_str + '...')
+                name_label.configure(text=name_str + '...' + rung_text)
                 self.master.update_idletasks()
+
+            if not rung_text:
+                self.SHORTENED_NAME_LIST[index] = name_str if name_str == original_name else name_str + '...'
+                self.__change_setting(self.DEFAULT_NAMES['s_name'])
         except _tkinter.TclError as tclerror:
             pass
 
 
-    def __create_alarm_list(self, event = None):
+    def __create_alarm_list(self, event):
         self.alarms = list(zip(
             self.TIME_LIST,
             self.NAME_LIST,
+            self.SHORTENED_NAME_LIST,
             self.DESC_LIST,
             self.SOUND_LIST,
             self.LOOP_LIST,
@@ -881,9 +965,10 @@ class Alarm(Timing):
 
         indexed_alarms = list(enumerate(self.alarms))
         indexed_alarms.sort(key=lambda item: self.__time_to_minutes(item[1][0]))
+        self.invalid_sound_exists = False
 
         for alarm_index, alarm in indexed_alarms:
-            t, name, desc, sound, loop, volume, hidden, endless, enabled = alarm
+            t, name, s_name, desc, sound, loop, volume, hidden, endless, enabled = alarm
 
             switch_var = ctk.BooleanVar(value=bool(enabled))
             switch_fg_color = self.utility.STANDARD_ORDERED_FRAME_COLOR if switch_var.get() else 'transparent'
@@ -891,33 +976,39 @@ class Alarm(Timing):
             switch_text = 'Enabled' if switch_var.get() else 'Disabled'
             today_trigger_id = (alarm_index, datetime.now().date())
             alarm_fired = today_trigger_id in self._fired_alarms
+            invalid_sound_text = ''
+
 
             if alarm_fired:
-                row_fg_color = self.utility.adjust_color(self.utility.STANDARD_ORDERED_FRAME_COLOR, 35,
-                                                         self.utility.STANDARD_FG_COLOR)
+                row_fg_color = self.utility.adjust_color(self.utility.STANDARD_ORDERED_FRAME_COLOR, 35, self.utility.STANDARD_FG_COLOR)
                 row_text_color = self.utility.STANDARD_FG_COLOR
                 row_border_color = self.utility.STANDARD_FG_COLOR
-            else:
+            elif self.sound_man.sound_exists(sound):
                 row_fg_color = switch_fg_color
                 row_text_color = text_color
                 row_border_color = self.utility.STANDARD_MODE_BORDER_COLOR
+            else:
+                row_fg_color = self.utility.complementaryColor(self.utility.adjust_color(self.utility.STANDARD_ORDERED_FRAME_COLOR, 35, self.utility.STANDARD_FG_COLOR))
+                row_text_color = self.utility.complementaryColor(row_fg_color)
+                row_border_color = self.utility.complementaryColor(self.utility.STANDARD_MODE_BORDER_COLOR)
+                self.invalid_sound_exists = True
+                invalid_sound_text = '<=== This alarm has an invalid sound! Change it. ===>'
+                self.SOUND_LIST[alarm_index] = ''
+                self.__change_setting(self.DEFAULT_NAMES['sound'])
 
-            list_row = ctk.CTkFrame(
-                self.list_placeable_frame,
-                border_width=5,
-                corner_radius=20,
-                fg_color=row_fg_color,
-                border_color=row_border_color
-            )
+            list_row = ctk.CTkFrame(self.list_placeable_frame, border_width=5, corner_radius=20, fg_color=row_fg_color, border_color=row_border_color)
             enabled_frame = ctk.CTkFrame(list_row, fg_color=row_fg_color)
 
             hour, minute = map(int, t.split(':'))
             period = 'AM' if hour < 12 else 'PM'
             hour = hour % 12 or 12
+            rung_text = '🔔 Rung' if alarm_fired else ''
 
-            name = name + '  •  ' if alarm_fired and name else name
+            name_text = s_name
+            if not s_name.endswith('...'):
+                name_text = s_name + '  •  ' if alarm_fired and s_name else s_name
             time_label = ctk.CTkLabel(list_row, text=f'✓ {hour}:{minute:02d} {period}' if alarm_fired else f'{hour}:{minute:02d} {period}', text_color=row_text_color)
-            name_label = ctk.CTkLabel(list_row, text=f'{name}🔔 Rung' if alarm_fired else name, text_color=row_text_color)
+            name_label = ctk.CTkLabel(list_row, text=f'{name_text}{rung_text}', text_color=row_text_color)
             enabled_switch = ctk.CTkSwitch(
                 enabled_frame,
                 text=switch_text,
@@ -926,26 +1017,31 @@ class Alarm(Timing):
                 progress_color=row_text_color,
                 command=lambda var=switch_var, index=alarm_index, row=list_row: self.__handle_switch(var, index, row)
             )
+            invalid_sound_label = ctk.CTkLabel(list_row, text=invalid_sound_text, text_color=row_text_color, font=('Arial', 12))
 
             list_row.pack(fill='x', pady=5, ipady=30)
             time_label.pack(side='left', padx=10, anchor='center')
             name_label.place(relx=0.15, rely=0.5, anchor='w')
+            invalid_sound_label.place(relx=0.5, rely=0.78, relheight=0.2, anchor='center')
             enabled_frame.place(relx=0.875, rely=0.5, relheight=0.8, relwidth=0.2, anchor='center')
             enabled_switch.place(relx=0.5, rely=0.5, anchor='center')
-            self.master.after(200, lambda n=name_label, t=time_label, e=enabled_frame: self.__fit_alarm_names(n, t, e))
+            self.master.after(500, lambda i=alarm_index, n=name_label, t=time_label, e=enabled_frame, r=rung_text: self.__fit_alarm_names(i, n, t, e, r))
 
             time_label.bind('<MouseWheel>', lambda event: self.list_canvas.yview_scroll(int(-event.delta / 120), 'units'))
             name_label.bind('<MouseWheel>', lambda event: self.list_canvas.yview_scroll(int(-event.delta / 120), 'units'))
+            invalid_sound_label.bind('<MouseWheel>', lambda event: self.list_canvas.yview_scroll(int(-event.delta / 120), 'units'))
             list_row.bind('<MouseWheel>', lambda event: self.list_canvas.yview_scroll(int(-event.delta / 120), 'units'))
             enabled_frame.bind('<MouseWheel>', lambda event: self.list_canvas.yview_scroll(int(-event.delta / 120), 'units'))
 
             list_row.bind('<Button-1>', lambda event, index=alarm_index: self.__change_alarm(index))
             time_label.bind('<Button-1>', lambda event, index=alarm_index: self.__change_alarm(index))
             name_label.bind('<Button-1>', lambda event, index=alarm_index: self.__change_alarm(index))
+            invalid_sound_label.bind('<Button-1>', lambda event, index=alarm_index: self.__change_alarm(index))
 
             list_row.configure(cursor='hand2')
             time_label.configure(cursor='hand2')
             name_label.configure(cursor='hand2')
+            invalid_sound_label.configure(cursor='hand2')
 
 
     def __setup(self):
@@ -960,7 +1056,7 @@ class Alarm(Timing):
         self.utility.set_default_button_text_color()
 
 
-    def build(self):
+    def build(self, event = None):
         rev_fg_color = self.utility.complementaryColor(self.utility.STANDARD_FG_COLOR)
         rev_text_color = self.utility.complementaryColor(self.utility.STANDARD_BUTTON_TEXT_COLOR)
         self.top_label_content.configure(text='Alarm')
@@ -1015,6 +1111,8 @@ class Alarm(Timing):
         self.volume_var = ctk.IntVar(value=self.VOLUME_LIST[-1])
         self.volume_slider = ctk.CTkSlider(self.volume_frame, orientation='horizontal', scroll_step=0, from_=0, to=100, number_of_steps=100, variable=self.volume_var, command=self.__set_volume)
         self.volume_value_label = ctk.CTkLabel(self.volume_frame, text=f'Amplification: {int(self.volume_var.get())}%')
+        self.volume_slider.set(self.VOLUME_LIST[-1])
+
         selected_volume_title_label = ctk.CTkLabel(self.volume_frame, text=f'Selected sound:')
         font_style = ctk.CTkFont(weight=None) if self.selected_sound else ctk.CTkFont(weight='bold')
         selected_text = f'> {self.selected_sound}' if self.selected_sound else f'{self.selected_sound}, select one first!'
@@ -1022,7 +1120,7 @@ class Alarm(Timing):
         text_color = self.utility.STANDARD_BUTTON_TEXT_COLOR if self.selected_sound else rev_text_color
         self.selected_volume_variable_label = ctk.CTkLabel(self.volume_frame, text=selected_text, font=font_style)
         self.sound_button = ctk.CTkButton(self.clock_volume_frame, text='♬ Sounds', command=self.__open_sound_manager, fg_color=fg_color, text_color=text_color)
-        self.volume_slider.set(self.VOLUME_LIST[-1])
+
         volume_title.place(relx=0.07, rely=0.07, anchor='w')
         self.volume_value_label.place(relx=0.5, rely=0.22, anchor='center')
         self.volume_slider.place(relx=0.5, rely=0.36, relwidth=0.82, anchor='center')
@@ -1103,7 +1201,7 @@ class Alarm(Timing):
                 create_new_alarm_button.configure(fg_color=rev_fg_color, text_color=rev_text_color)
                 self.__setup()
 
-            self.__create_alarm_list()
+            self.__create_alarm_list(None)
 
         else:
             no_alarm_label.place(relx=0.5, rely=0.5, anchor='center')
@@ -1113,5 +1211,3 @@ class Alarm(Timing):
         self.utility.create_entry_name(loop_entry, 'loop')
         if self._countdown_after_id is None:
             self.__update_next_alarm_label()
-
-

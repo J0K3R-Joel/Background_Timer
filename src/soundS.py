@@ -792,6 +792,10 @@ class SoundManager(ctk.CTkToplevel):
     def get_selected_sound(self):
         return self.selected_sound
 
+    def sound_exists(self, sound):
+        sound_path = os.path.join(self.sound_folder, sound)
+        return os.path.isfile(sound_path)
+
 
 class App(ctk.CTk):
     def __init__(self):

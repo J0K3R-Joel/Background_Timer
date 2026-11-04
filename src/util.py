@@ -1,5 +1,7 @@
 import time
 import threading
+
+import _tkinter
 import customtkinter as ctk
 import builtins
 import colorsys
@@ -28,15 +30,16 @@ class Utility():
 
         def show_text(scope, text, seconds):
             warning_label = ctk.CTkLabel(scope, text='', text_color='black', fg_color='yellow')
-            time_now = time.time()
             warning_label.configure(text=text, font=('Arial', 20), text_color='black')
             warning_label.place(relx=0.5, rely=0.5, anchor='center')
             warning_label.lift()
+            scope.after(seconds * 1000, lambda: hide_text(warning_label))
 
-            while time.time() - time_now < seconds:
+        def hide_text(label):
+            try:
+                label.place_forget()
+            except _tkinter.TclError:
                 pass
-
-            warning_label.place_forget()
 
         threading.Thread(target=show_text, args=(scope, text, seconds,), daemon=True).start()
 
