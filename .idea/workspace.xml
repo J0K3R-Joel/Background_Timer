@@ -4,10 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fe5c217d-d218-4d13-bd9a-18610e208371" name="Changes" comment="changed: messageR.py got new methods to print messages in the console. background_timer.py got a update concerning the place_mode_widget function">
+    <list default="true" id="953a623c-6b89-44a5-8835-fb21d986e12f" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/images/farbkreis.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/theme_editor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Background_Timer.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Background_Timer.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/discord.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/discord.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/alarm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/alarm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/constants.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soundS.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soundS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stop_watch.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/stop_watch.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/timeR.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/timeR.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/util.py" afterDir="false" />
     </list>
@@ -16,50 +24,29 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 0
 }</component>
-  <component name="ProjectId" id="3Hl2Ur9mIcVz1iDsnzi4tghgTG0" />
+  <component name="ProjectId" id="3Lf5UtVALEu6kObrHJqzXK59nAW" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python.ExpandingEntry.executor": "Run",
-    "Python.NumberPicker.executor": "Run",
-    "Python.alarm.executor": "Run",
-    "Python.background_timer.executor": "Run",
-    "Python.circular_progress_bar.executor": "Run",
-    "Python.constants.executor": "Run",
     "Python.main.executor": "Run",
-    "Python.main.py.executor": "Run",
-    "Python.messageR.executor": "Run",
-    "Python.pathR.executor": "Run",
-    "Python.soundS.executor": "Run",
-    "Python.stop_watch.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.timeR.executor": "Run",
-    "Python.util.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Joel_K/Privat/Python",
     "settings.editor.selected.configurable": "discord-application"
   }
 }]]></component>
   <component name="RunManager">
-    <configuration name="main.py" type="PythonConfigurationType" factoryName="Python">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python">
       <module name="Background_Timer" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -93,25 +80,12 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="fe5c217d-d218-4d13-bd9a-18610e208371" name="Changes" comment="" />
-      <created>1786428353892</created>
+      <changelist id="953a623c-6b89-44a5-8835-fb21d986e12f" name="Changes" comment="" />
+      <created>1793832302028</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1786428353892</updated>
+      <updated>1793832302028</updated>
     </task>
-    <task id="LOCAL-00001" summary="changed: messageR.py got new methods to print messages in the console. background_timer.py got a update concerning the place_mode_widget function">
-      <option name="closed" value="true" />
-      <created>1786623045644</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1786623045644</updated>
-    </task>
-    <option name="localTasksCounter" value="2" />
     <servers />
-  </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="changed: messageR.py got new methods to print messages in the console. background_timer.py got a update concerning the place_mode_widget function" />
-    <option name="LAST_COMMIT_MESSAGE" value="changed: messageR.py got new methods to print messages in the console. background_timer.py got a update concerning the place_mode_widget function" />
   </component>
 </project>

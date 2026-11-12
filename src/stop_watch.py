@@ -7,7 +7,7 @@ from messagR import MessageR
 class Stop_Watch(Timing):
     def __init__(self, *args):
         Timing.__init__(self, *args)
-        self.utility = Utility(self.master)
+        self.utility = Utility(self.master, self.build)
         self.paused = False
         self.stopped = False
         self.elapsed_before_pause = 0

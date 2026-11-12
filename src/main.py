@@ -8,7 +8,6 @@ from alarm import Alarm
 import socket
 import threading
 
-
 INSTANCE_HOST = "127.0.0.1"
 INSTANCE_PORT = 47821
 
@@ -16,8 +15,8 @@ INSTANCE_PORT = 47821
 def try_show_existing_instance():
     try:
         with socket.create_connection(
-            (INSTANCE_HOST, INSTANCE_PORT),
-            timeout=0.2
+                (INSTANCE_HOST, INSTANCE_PORT),
+                timeout=0.2
         ) as connection:
             connection.sendall(b"SHOW")
 
@@ -29,7 +28,6 @@ def try_show_existing_instance():
 
 if try_show_existing_instance():
     raise SystemExit
-
 
 app = ctk.CTk()
 app.geometry("800x400")
@@ -100,7 +98,7 @@ def clear_page() -> ctk.CTkLabel:
     utility.clear_scope(content_site)
     border_heading_content = ctk.CTkFrame(content_site, corner_radius=0, fg_color=utility.STANDARD_FG_COLOR)
     border_heading_content.place(relx=0, rely=0.14, relwidth=1, relheight=0.02)
-    top_label_content = ctk.CTkLabel(content_site,font=("Arial", 22))
+    top_label_content = ctk.CTkLabel(content_site, font=("Arial", 22))
 
     return top_label_content
 
@@ -121,6 +119,7 @@ def focus_mode(mode_name):
 
     mode = MODES[mode_name]
     label = clear_page()
+    utility.set_build_callable(mode["site"].build)
     mode["site"].set_top_label_content(label)
     mode["site"].build()
     active_mode = mode_name
@@ -143,6 +142,8 @@ content_site.place(relx=0.2, rely=0, relwidth=0.8, relheight=1)
 utility.draw_mode_line(mode_site)
 utility.draw_heading_line(scope=content_site)
 
+theme_button = utility.create_theme_button(image_path="images/farbkreis.png", scope=mode_site, size=(36, 36))
+theme_button.place(relx=0.5, rely=0.1, anchor="center")
 
 # ==================================
 # ========== Content Sites =========
@@ -159,11 +160,9 @@ timer_site = TimeR(*timing_args, app=app)
 stop_watch_site = Stop_Watch(*timing_args)
 alarm_site = Alarm(*timing_args, app=app)
 
-
 register_mode("Alarm", alarm_site)
 register_mode("Timer", timer_site)
 register_mode("Stop Watch", stop_watch_site)
-
 
 utility.set_default_button_text_color()
 utility.set_default_fg_color()
@@ -171,6 +170,8 @@ utility.set_default_hover_color()
 utility.set_default_text_color()
 utility.set_default_button_text_color()
 
+theme_button.configure(fg_color='transparent')
+theme_button.configure(hover_color=utility.complementaryColor(utility.STANDARD_BACKGROUND_COLOR))
 
 app.protocol("WM_DELETE_WINDOW", close_application)
 

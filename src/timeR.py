@@ -41,7 +41,7 @@ class TimeR(Timing):
         self._timer_elapsed = 0
         self._sound_loops_remaining = 0
         self.NUMBERPICKERS = {}
-        self.utility = Utility(self.master)
+        self.utility = Utility(self.master, self.build)
         self.sound_man = SoundManager(self.master)
         self.selected_sound = self.sound_man.get_selected_sound()
         self.msg = MessageR(self.__class__.__name__)

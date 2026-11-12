@@ -2,10 +2,9 @@ import json
 from fileR import FileR
 from pathR import PathR
 from messagR import MessageR
-from timing import Timing
 
 class Constants():
-    def __init__(self, class_: Timing):
+    def __init__(self, class_):
         self.class_ = class_
         self.msg = MessageR(self.__class__.__name__)
         self.path_man = PathR(self.class_.__class__.__name__)

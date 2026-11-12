@@ -45,7 +45,7 @@ class Alarm(Timing):
         self._app = app
         self.msg = MessageR(self.__class__.__name__)
         self.constants = Constants(self)
-        self.utility = Utility(self.master)
+        self.utility = Utility(self.master, self.build)
         self.sound_man = SoundManager(self.master)
         self.selected_sound = self.sound_man.get_selected_sound()
         self.invalid_sound_exists = False
@@ -495,7 +495,6 @@ class Alarm(Timing):
         remove_fg_color = self.utility.adjust_color(comp_fg_col, 50, self.utility.STANDARD_FG_COLOR)
         remove_text_color = self.utility.complementaryColor(remove_fg_color)
 
-        self.__setup()
         self.cancel_button.configure(fg_color=comp_fg_col, text_color=comp_text_col, hover_color=self.utility.adjust_color(comp_fg_col, 50))
         self.delete_button.configure(fg_color=remove_fg_color, text_color=remove_text_color, hover_color=self.utility.adjust_color(remove_fg_color, 50))
 

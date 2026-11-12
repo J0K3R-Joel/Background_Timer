@@ -1,28 +1,141 @@
 import time
 import threading
-
+from PIL import Image
 import _tkinter
 import customtkinter as ctk
 import builtins
 import colorsys
 from messagR import MessageR
 from ExpandingEntry import EntryExpanding
+from theme_editor import ThemeEditor
 
 
 class Utility():
-    def __init__(self, master):
+    def __init__(self, master, build_callable=None):
         self.master = master
-        self.STANDARD_FG_COLOR = '#FF0000'
-        self.STANDARD_HOVER_COLOR = self.adjust_color(self.STANDARD_FG_COLOR, 50)
-        self.STANDARD_TEXT_COLOR = '#FFFFFF'
-        self.STANDARD_BUTTON_TEXT_COLOR = '#FFFFFF'
-        self.STANDARD_BACKGROUND_COLOR = '#2b2b2b'
-        self.STANDARD_MODE_BORDER_COLOR = '#474747'
-        self.STANDARD_WRITABLE_CONTENT_COLOR = '#343638'
-        self.STANDARD_ORDERED_FRAME_COLOR = '#353535'
-        self.STANDARD_ORDERED_FRAME_BORDER_COLOR = '#686868'
+        self.build_callable = build_callable
         self.ENTRY_WIDGETS = {}
         self.msg = MessageR('Utility')
+        self.DEFAULT_THEME_COLORS = ThemeEditor(self, self.master).get_standard_colors()
+        self.set_theme_colors(self.DEFAULT_THEME_COLORS)
+
+    def get_theme_colors(self) -> dict:
+        return {key: getattr(self, key) for key in self.DEFAULT_THEME_COLORS}
+
+
+    def set_theme_colors(self, colors: dict, apply: bool = False) -> None:
+        for key in self.DEFAULT_THEME_COLORS:
+            value = colors.get(key, self.DEFAULT_THEME_COLORS[key])
+            if not isinstance(value, str) or len(value) != 7 or not value.startswith("#"):
+                raise ValueError(f"Invalid colorcode for {key}: {value!r}")
+            int(value[1:], 16)
+            setattr(self, key, value.upper())
+
+        if apply:
+            self.apply_standard_colors()
+
+
+    def apply_standard_colors(self, scope=None) -> None:
+        scope = self.master if scope is None else scope
+        widgets = self.get_widgets_from_scope([], scope.winfo_children())
+
+        for widget in widgets:
+            try:
+                button_text_types = (
+                    ctk.CTkButton,
+                    ctk.CTkOptionMenu,
+                    ctk.CTkComboBox
+                )
+
+                fg_color = self.STANDARD_FG_COLOR
+                text_color = self.STANDARD_BUTTON_TEXT_COLOR if isinstance(widget, button_text_types) else self.STANDARD_TEXT_COLOR
+
+                if hasattr(widget, "cget"):
+                    try:
+                        old_fg_color = widget.cget("fg_color")
+                        if isinstance(old_fg_color, str) and old_fg_color.startswith("#"):
+                            fg_color = old_fg_color
+
+                        old_text_color = widget.cget('text_color')
+                        if isinstance(old_text_color, str) and old_text_color.startswith("#"):
+                            text_color = old_text_color
+                    except Exception:
+                        pass
+                try:
+                    widget.configure(text_color=text_color)
+                except Exception as e:
+                    pass
+
+                if isinstance(widget, ctk.CTkButton):
+                    if widget.cget('image'):
+                        print(f'{widget.__name__ = }')
+                        continue
+
+                    widget.configure(text_color=text_color, fg_color=fg_color, hover_color=self.adjust_color(fg_color, 50))
+                elif isinstance(widget, ctk.CTkComboBox):
+                    widget.configure(border_color=fg_color,
+                                     text_color=text_color,
+                                     fg_color=fg_color,
+                                     button_color=fg_color,
+                                     button_hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, ctk.CTkCheckBox):
+                    widget.configure(checkmark_color=self.STANDARD_TEXT_COLOR,
+                                     fg_color=fg_color,
+                                     hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, ctk.CTkSwitch):
+                    widget.configure(progress_color=fg_color,
+                                     button_hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, ctk.CTkSlider):
+                    widget.configure(button_color=fg_color,
+                                     progress_color=fg_color,
+                                     button_hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, ctk.CTkScrollbar):
+                    widget.configure(button_color=fg_color,
+                                     button_hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, (ctk.CTkEntry, ctk.CTkTextbox)):
+                    widget.configure(fg_color=self.STANDARD_WRITABLE_CONTENT_COLOR)
+                elif isinstance(widget, ctk.CTkProgressBar):
+                    widget.configure(progress_color=fg_color)
+                elif isinstance(widget, ctk.CTkOptionMenu):
+                    widget.configure(text_color=text_color,
+                                    fg_color=fg_color,
+                                     button_color=fg_color,
+                                     button_hover_color=self.STANDARD_HOVER_COLOR)
+                elif isinstance(widget, ctk.CTkRadioButton):
+                    widget.configure(fg_color=fg_color,
+                                     hover_color=self.STANDARD_HOVER_COLOR)
+                # elif isinstance(widget, ctk.CTkFrame):
+                #     place_info = widget.place_info() if widget.winfo_manager() == "place" else {}
+                #     relx = float(place_info.get("relx", 0) or 0)
+                #     border_width = float(widget.cget("border_width") or 0)
+                #     if relx >= 0.90:
+                #         widget.configure(fg_color=self.STANDARD_MODE_BORDER_COLOR)
+                #     elif border_width > 0:
+                #         widget.configure(fg_color=self.STANDARD_ORDERED_FRAME_COLOR,
+                #                          border_color=self.STANDARD_ORDERED_FRAME_BORDER_COLOR)
+                #     else:
+                #         widget.configure(fg_color=self.STANDARD_BACKGROUND_COLOR)
+            except Exception:
+                continue
+
+    def set_hover_color(self):
+        self.STANDARD_HOVER_COLOR = self.adjust_color(self.STANDARD_FG_COLOR, 50)
+
+    def set_build_callable(self, build_callable):
+        self.build_callable = build_callable
+
+    def open_theme_editor(self):
+        editor = ThemeEditor(self, self.master, back_callback=self.build_callable)
+        editor._render()
+
+
+    def create_theme_button(self, image_path: str, scope=None, size=(36, 36), **button_kwargs):
+        scope = self.master if scope is None else scope
+        image = ctk.CTkImage(light_image=Image.open(image_path), dark_image=Image.open(image_path), size=size)
+        button = ctk.CTkButton(scope, text="", image=image, width=size[0], height=size[1], command=self.open_theme_editor, **button_kwargs)
+        button._theme_button_image = image
+
+        return button
 
 
     def show_warning_text(self, text: str, seconds: float | int,  scope = None) -> None:
@@ -87,14 +200,14 @@ class Utility():
 
                     if isinstance(color, list):
                         self.msg.warning(f'{widget} with {color = }')
-                    widget.configure(hover_color=self.adjust_color(color, 40))
+                    widget.configure(hover_color=self.STANDARD_HOVER_COLOR)
 
             if isinstance(widget, ctk.CTkSlider):
                 color = widget.cget('progress_color')
 
                 if isinstance(color, list):
                     self.msg.warning(f'{widget} with {color = }')
-                widget.configure(button_hover_color=self.adjust_color(color, 40))
+                widget.configure(button_hover_color=self.STANDARD_HOVER_COLOR)
 
             if isinstance(widget, ctk.CTkScrollbar):
                 color = widget.cget('button_color')
@@ -102,7 +215,7 @@ class Utility():
                 if isinstance(color, list):
                     self.msg.warning(f'{widget} with {color = }')
 
-                widget.configure(button_hover_color=self.adjust_color(color, 40))
+                widget.configure(button_hover_color=self.STANDARD_HOVER_COLOR)
 
 
     def set_default_text_color(self, exclude_scope = None, scope = None):
